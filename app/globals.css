@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #141414;
+  --card-hover: #1a1a1a;
+  --muted: #1e1e1e;
+  --muted-foreground: #9a9a9a;
+  --border: #262626;
+  --border-hover: #333333;
+  --primary: #ff3b30;
+  --primary-foreground: #ffffff;
+  --radius: 8px;
+}
+
+[data-theme="light"] {
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --card: #ffffff;
+  --card-hover: #fbfbfd;
+  --muted: #e8e8ed;
+  --muted-foreground: #515154;
+  --border: #d2d2d7;
+  --border-hover: #a1a1a6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* { scrollbar-width: thin; scrollbar-color: #333 transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* liquid glass — Apple-style translucent */
+.liquid {
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.liquid-strong {
+  background: color-mix(in srgb, var(--card) 84%, transparent);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+.liquid-card {
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--border);
+  transition: background 0.3s, border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+}
+.liquid-card:hover {
+  background: var(--card);
+  border-color: var(--border-hover);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+/* flat utilities — no gradients */
+.glass {
+  background: color-mix(in srgb, var(--card) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+.glass-strong {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+/* cards — flat, sharp */
+.card-flat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.card-flat:hover {
+  background: var(--card-hover);
+  border-color: var(--border-hover);
+}
+
+/* buttons — less curvy: 8px radius */
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 8px;
+  font-weight: 700;
+}
+.btn-secondary {
+  background: #1e1e1e;
+  color: #fafafa;
+  border: 1px solid #262626;
+  border-radius: 8px;
+}
+
+/* flat progress */
+.range-slider {
+  -webkit-appearance: none; appearance: none;
+  height: 4px; background: var(--border); border-radius: 2px; outline: none;
+}
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; border-radius: 4px;
+  background: var(--card); cursor: pointer; border: 1px solid #ff3b30;
+}
+.range-slider::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 4px;
+  background: var(--card); cursor: pointer; border: 1px solid #ff3b30;
+}
+
+.safe-bottom { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* light-mode overrides for hardcoded dark classes — keeps flat design but adapts */
+[data-theme="light"] .bg-\[\#141414\] { background-color: var(--card) !important; }
+[data-theme="light"] .bg-\[\#0a0a0a\] { background-color: var(--background) !important; }
+[data-theme="light"] .bg-\[\#0f0f0f\] { background-color: var(--muted) !important; }
+[data-theme="light"] .bg-\[\#1e1e1e\] { background-color: var(--muted) !important; }
+[data-theme="light"] .border-\[\#262626\] { border-color: var(--border) !important; }
+[data-theme="light"] .text-white\/60 { color: #515154 !important; }
+[data-theme="light"] .text-white\/55 { color: #515154 !important; }
+[data-theme="light"] .text-white\/50 { color: #6e6e73 !important; }
+[data-theme="light"] .text-white\/40 { color: #86868b !important; }
+[data-theme="light"] .text-white\/35 { color: #86868b !important; }
+[data-theme="light"] .text-white\/30 { color: #a1a1a6 !important; }
+[data-theme="light"] .placeholder\:text-white\/30::placeholder { color: #86868b !important; }
+[data-theme="light"] .bg-white:not(.bg-\[\#ff3b30\]) { background-color: #1d1d1f !important; color: #fff !important; }
+[data-theme="light"] .hover\:bg-zinc-100:hover { background-color: #1d1d1f !important; }
+[data-theme="light"] body { background: var(--background) !important; color: var(--foreground) !important; }
+[data-theme="light"] .text-white\/70 { color: #1d1d1f !important; }
+[data-theme="light"] .text-\[var\(--muted-foreground\)\] { color: #515154 !important; }
+
+/* micro-interactions */
+@keyframes pulse-live { 0%{opacity:1; transform:scale(1)} 50%{opacity:0.6; transform:scale(0.95)} 100%{opacity:1; transform:scale(1)} }
+@keyframes equalize { 0%,100%{height:4px} 50%{height:14px} }
+@keyframes fadeIn { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+@keyframes heartPop { 0%{transform:scale(1)} 50%{transform:scale(1.25)} 100%{transform:scale(1)} }
+@keyframes tapRip { 0%{transform:scale(0); opacity:0.4} 100%{transform:scale(2.5); opacity:0} }
+.animate-fadeIn { animation: fadeIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-heart { animation: heartPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+.tap-feedback:active { transform: scale(0.97); }
+.pressable { transition: transform 0.12s ease, background 0.2s, border-color 0.2s, box-shadow 0.2s; }
+.pressable:active { transform: scale(0.98); }
+.liquid-shine { position:relative; overflow:hidden; }
+.liquid-shine::after { content:""; position:absolute; inset:0; background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.07) 50%, transparent 70%); transform: translateX(-100%); transition: transform 0.6s; }
+.liquid-shine:hover::after { transform: translateX(100%); }

@@ -1,0 +1,27 @@
+{
+  "name": "Radiobeast — World Radio",
+  "short_name": "Radiobeast",
+  "description": "Listen to 45,000+ live radio stations from every country. Free, no sign-up.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "background_color": "#08080a",
+  "theme_color": "#ff5a1f",
+  "orientation": "any",
+  "categories": ["music", "entertainment", "news"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-32x32.png", "sizes": "32x32", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-48x48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Trending stations", "url": "/?tab=trending", "description": "Browse trending live stations", "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }] },
+    { "name": "Search", "url": "/?focus=search", "description": "Search stations by name or country", "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }] }
+  ],
+  "screenshots": []
+}
