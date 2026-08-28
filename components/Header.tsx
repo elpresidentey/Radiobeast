@@ -1,9 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { Bebas_Neue } from "next/font/google";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useTheme } from "@/components/ThemeProvider";
 import { Settings } from "@/components/Settings";
+
+const logoFont = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
 export function Header({ onSearch, searchValue }: { onSearch: (v: string) => void; searchValue: string }) {
   const [local, setLocal] = useState(searchValue);
@@ -70,7 +73,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
         <div className="h-[56px] sm:h-[60px] flex items-center gap-2 sm:gap-4">
           {/* brand */}
           <motion.a href="/" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex items-center gap-2.5 sm:gap-3 shrink-0 min-w-0 group">
-            <motion.div whileHover={{ rotate: 3 }} transition={{ type: "spring", stiffness: 300 }} className="relative grid h-9 w-9 sm:h-10 sm:w-10 place-items-center bg-[#ff3b30] text-white rounded-[10px] shadow-[0_4px_12px_rgba(255,59,48,0.25)] shrink-0">
+            <motion.div whileHover={{ rotate: 3 }} transition={{ type: "spring", stiffness: 300 }} className="relative grid h-9 w-9 sm:h-10 sm:w-10 place-items-center bg-[#ff3b30] text-white rounded-none shadow-[0_4px_12px_rgba(255,59,48,0.25)] shrink-0">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="sm:w-5 sm:h-5">
                 <path d="M12 3a9 9 0 0 0-9 9c0 4.97 4.03 9 9 9s9-4.03 9-9-4.03-9-9-9Z" stroke="white" strokeWidth="1.8" />
                 <path d="M12 7a5 5 0 0 1 5 5" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
@@ -81,11 +84,11 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
             </motion.div>
             <div className="leading-none min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-[15px] sm:text-[16px] font-black tracking-[-0.03em] text-[var(--foreground)]">RADIOBEAST</span>
+                <span className={`${logoFont.className} text-[22px] sm:text-[24px] font-normal tracking-[0.06em] leading-none text-[var(--foreground)]`}>RADIOBEAST</span>
                 <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="hidden lg:inline-flex items-center gap-1 bg-[var(--muted)] border border-[var(--border)] px-1.5 py-0.5 rounded-[6px] text-[10px] font-bold tracking-wide text-[var(--muted-foreground)]">LIVE</motion.span>
               </div>
-              <div className="hidden sm:block text-[10px] font-semibold tracking-[0.14em] text-[var(--muted-foreground)] leading-none">WORLD RADIO</div>
-              <div className="sm:hidden text-[10px] font-semibold tracking-[0.12em] text-[var(--muted-foreground)] leading-none">WORLD RADIO</div>
+              <div className="hidden sm:block text-[10px] font-semibold tracking-[0.18em] text-[var(--muted-foreground)] leading-none">WORLD RADIO</div>
+              <div className="sm:hidden text-[10px] font-semibold tracking-[0.14em] text-[var(--muted-foreground)] leading-none">WORLD RADIO</div>
             </div>
           </motion.a>
 
