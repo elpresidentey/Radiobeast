@@ -36,15 +36,14 @@ export function StationCard({ station, onPlay }: { station: Station; onPlay?: ()
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
-      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      className={`group relative flex flex-col overflow-hidden liquid-card text-left ${isCurrent ? "border-[#ff3b30]/40 shadow-sm" : "border-[var(--border)]"} rounded-none hover:shadow-sm animate-fadeIn liquid-shine`}
+      whileHover={{ y: -1 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className={`group relative flex flex-col overflow-hidden liquid-card text-left h-[300px] ${isCurrent ? "border-[#ff3b30]/50" : "border-[var(--border)]"} rounded-none`}
     >
-      {/* top flat bar when playing — no gradient */}
-      {isCurrent && isPlaying && <div className="absolute inset-x-0 top-0 h-[2px] bg-[#ff3b30]" />}
+      {isCurrent && isPlaying && <div className="absolute inset-x-0 top-0 h-px bg-[#ff3b30]" />}
 
-      {/* header — flat, no gradient */}
-      <div className="relative h-[96px] overflow-hidden bg-[var(--muted)]/60 border-b border-[var(--border)]">
+      {/* header — minimal 72px */}
+      <div className="relative h-[72px] shrink-0 overflow-hidden bg-[var(--muted)]/40 border-b border-[var(--border)]">
         {hasArt ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={station.favicon} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-[0.9]" onError={(e)=>(e.currentTarget.style.display="none")} />
@@ -89,16 +88,17 @@ export function StationCard({ station, onPlay }: { station: Station; onPlay?: ()
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col p-3 gap-2.5">
+      <div className="flex flex-1 flex-col p-3 gap-2">
         <div className="min-w-0">
-          <h3 className="truncate text-[14px] font-bold leading-tight">{station.name}</h3>
-          <p className="truncate text-xs text-white/50 mt-0.5">{station.state ? `${station.state} • ` : ""}{station.language || tags[0] || "Music"}</p>
+          <h3 className="truncate text-[13px] font-semibold leading-tight tracking-tight">{station.name}</h3>
+          <p className="truncate text-[11px] text-[var(--muted-foreground)] mt-1">{station.country} · {station.language || tags[0] || "Music"}</p>
         </div>
 
-        <div className="flex flex-wrap gap-1 min-h-[20px]">
-          {tags.length ? tags.map(t=>(
-            <span key={t} className="bg-[var(--muted)] border border-[var(--border)] px-2.5 py-1 text-[11px] font-medium text-[var(--muted-foreground)] rounded-none capitalize">{t}</span>
-          )) : <span className="bg-[var(--muted)] border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--muted-foreground)] rounded-none">general</span>}
+        <div className="flex flex-wrap gap-1 h-[22px] overflow-hidden">
+          {tags.slice(0,2).map(t=>(
+            <span key={t} className="bg-transparent border border-[var(--border)] px-2 py-0.5 text-[10px] font-medium tracking-wide text-[var(--muted-foreground)] rounded-none uppercase">{t}</span>
+          ))}
+          {tags.length === 0 && <span className="bg-transparent border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)] rounded-none">GENERAL</span>}
         </div>
 
         <div className="flex items-center gap-2 pt-1">

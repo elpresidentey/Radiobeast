@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useTheme } from "@/components/ThemeProvider";
+import { Settings } from "@/components/Settings";
 
 export function Header({ onSearch, searchValue }: { onSearch: (v: string) => void; searchValue: string }) {
   const [local, setLocal] = useState(searchValue);
@@ -11,6 +12,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
   const { current, isPlaying, dataSaver, toggleDataSaver } = usePlayerStore();
   const { theme, toggle } = useTheme();
   const [canInstall, setCanInstall] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => setLocal(searchValue), [searchValue]);
 
@@ -153,6 +155,9 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
               {dataSaver ? "Saver" : "Saver Off"}
             </motion.button>
 
+            <motion.button whileTap={{ scale: 0.92 }} onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings" className="h-9 w-9 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)] transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM12 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 7.97 15a1.65 1.65 0 0 0-1-1.51V13a1.65 1.65 0 0 0 1-1.51 1.65 1.65 0 0 0 .33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 7.97a1.65 1.65 0 0 0 1 1.51V9a1.65 1.65 0 0 0-1 1.51 1.65 1.65 0 0 0-.33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 12 15Z"/></svg>
+            </motion.button>
             <motion.button whileTap={{ scale: 0.92 }} onClick={toggle} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} title={`${theme === "dark" ? "Light" : "Dark"} mode`} className="h-9 w-9 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)] transition-colors">
               {theme === "dark" ? (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
@@ -161,7 +166,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
               )}
             </motion.button>
 
-            {/* mobile install + saver */}
+            {/* mobile install + saver + settings */}
             {canInstall && (
               <motion.button whileTap={{ scale: 0.92 }} onClick={handleInstall} className="sm:hidden h-9 px-2.5 grid place-items-center bg-[#ff3b30] text-white text-xs font-bold border border-[#ff3b30] rounded-none shrink-0" aria-label="Install app">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 15V3M8 11l4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>
@@ -169,6 +174,9 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
             )}
             <motion.button whileTap={{ scale: 0.92 }} onClick={toggleDataSaver} className={`sm:hidden h-9 w-9 grid place-items-center border rounded-none shrink-0 ${dataSaver ? "bg-[#ff3b30] border-[#ff3b30] text-white shadow-sm" : "bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)]"}`} aria-label="Data saver">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.97 16.97l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.97 7.03l2.83-2.83" /><circle cx="12" cy="12" r="3" /></svg>
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.92 }} onClick={() => setSettingsOpen(true)} className="sm:hidden h-9 w-9 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)]" aria-label="Settings">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.5 4.5l1.4 1.4M19.5 19.5l-1.4-1.4M1 12h2M21 12h2M4.5 19.5l1.4-1.4M19.5 4.5l-1.4 1.4"/></svg>
             </motion.button>
           </div>
         </div>
@@ -201,6 +209,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
           </div>
         </div>
       </div>
+      <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </header>
   );
 }
