@@ -146,7 +146,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
               </motion.button>
             )}
             <motion.button whileTap={{ scale: 0.92 }} onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings" className="h-9 w-9 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)] transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM12 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 7.97 15a1.65 1.65 0 0 0-1-1.51V13a1.65 1.65 0 0 0 1-1.51 1.65 1.65 0 0 0 .33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 7.97a1.65 1.65 0 0 0 1 1.51V9a1.65 1.65 0 0 0-1 1.51 1.65 1.65 0 0 0-.33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 12 15Z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2" fill="currentColor" stroke="none"/><circle cx="15" cy="16" r="2" fill="currentColor" stroke="none"/><circle cx="9" cy="8" r="2" stroke="currentColor" fill="none"/><circle cx="15" cy="16" r="2" stroke="currentColor" fill="none"/></svg>
             </motion.button>
             <motion.button whileTap={{ scale: 0.92 }} onClick={toggle} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} title={`${theme === "dark" ? "Light" : "Dark"} mode`} className="h-9 w-9 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)] transition-colors">
               {theme === "dark" ? (
@@ -163,7 +163,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
               </motion.button>
             )}
             <motion.button whileTap={{ scale: 0.92 }} onClick={() => setSettingsOpen(true)} className="sm:hidden h-9 w-9 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)]" aria-label="Settings">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.5 4.5l1.4 1.4M19.5 19.5l-1.4-1.4M1 12h2M21 12h2M4.5 19.5l1.4-1.4M19.5 4.5l-1.4 1.4"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="1.8" fill="currentColor"/><circle cx="15" cy="17" r="1.8" fill="currentColor"/></svg>
             </motion.button>
           </div>
         </div>
