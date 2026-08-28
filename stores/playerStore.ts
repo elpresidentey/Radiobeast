@@ -30,6 +30,7 @@ type PlayerState = {
   toggleCompactMode: () => void;
   togglePreferSelfHost: () => void;
   toggleIcecastFallback: () => void;
+  powerOff: () => void;
 };
 
 const FAV_KEY = "radiobeast:favs";
@@ -147,6 +148,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const next = !get().icecastFallback;
     if (typeof window !== "undefined") localStorage.setItem(ICECAST_KEY, next ? "1" : "0");
     set({ icecastFallback: next });
+  },
+  powerOff: () => {
+    set({ isPlaying: false, current: null });
+    if (typeof window !== "undefined") {
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
+      if (isStandalone) {
+        try { window.close(); } catch {}
+        // fallback for PWA: try to exit via history
+        setTimeout(() => { try { window.history.back(); } catch {} }, 100);
+      }
+    }
   },
 }));
 

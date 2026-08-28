@@ -10,7 +10,7 @@ function flag(code: string){
 }
 
 export function GlobalPlayer() {
-  const { current, isPlaying, toggle, volume, setVolume, isMuted, toggleMute, favorites, toggleFavorite, next, prev, queue, dataSaver } = usePlayerStore();
+  const { current, isPlaying, toggle, volume, setVolume, isMuted, toggleMute, favorites, toggleFavorite, next, prev, queue, dataSaver, powerOff } = usePlayerStore();
   const { error, loading, clearError } = useAudioPlayer();
   const [expanded, setExpanded] = useState(false);
   const [nowTitle, setNowTitle] = useState<string | null>(null);
@@ -71,6 +71,9 @@ export function GlobalPlayer() {
             <motion.button whileTap={{ scale: 0.9 }} whileHover={{ scale: 1.04 }} onClick={toggle} className="grid h-10 w-10 sm:h-10 sm:w-10 place-items-center bg-white text-black rounded-none font-black shrink-0 pressable shadow-sm" aria-label={isPlaying?"pause":"play"}>{isPlaying ? "॥" : "▶"}</motion.button>
             <motion.button whileTap={{ scale: 0.92 }} onClick={next} disabled={!queue.length} className="hidden sm:grid h-9 w-9 place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)] disabled:opacity-30 pressable">››</motion.button>
             <motion.button whileTap={{ scale: 0.85 }} onClick={()=>toggleFavorite(current.stationuuid)} className={`hidden sm:grid h-9 w-9 place-items-center border rounded-none shrink-0 pressable ${isFav?"bg-[#ff3b30] border-[#ff3b30] text-white animate-heart":"bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)]"}`}>♥</motion.button>
+            <motion.button whileTap={{ scale: 0.92 }} onClick={powerOff} title="Power off / Exit" aria-label="Power off" className="hidden sm:grid h-9 w-9 place-items-center bg-[#1d1d1f] border border-[#ff3b30]/30 text-[#ff3b30] hover:bg-[#ff3b30] hover:text-white rounded-none pressable">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4"/><circle cx="12" cy="12" r="8"/><path d="M12 2a8 8 0 0 1 8 8"/></svg>
+            </motion.button>
             <div className="hidden lg:flex items-center gap-2 pl-2 ml-1 border-l border-[var(--border)]">
               <button onClick={toggleMute} className="h-8 w-8 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)]">{isMuted||volume===0?"🔇":"🔊"}</button>
               <input type="range" min={0} max={1} step={0.01} value={isMuted?0:volume} onChange={(e)=>setVolume(parseFloat(e.target.value))} className="range-slider w-24" />
@@ -90,10 +93,14 @@ export function GlobalPlayer() {
               <div className="text-[var(--muted-foreground)]">Stream: {current.codec} {current.bitrate?`· ${current.bitrate} kbps · ~${mbPerHour} MB/h`:""} {loading ? "· buffering" : ""}</div>
               {current.homepage && <a href={current.homepage} target="_blank" rel="noreferrer" className="block bg-[var(--muted)] border border-[var(--border)] px-2 py-2 text-center font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Station website ↗</a>}
             </div>
-            <div className="flex gap-2">
-              <button onClick={prev} className="flex-1 bg-[var(--muted)] border border-[var(--border)] py-3 text-sm font-medium rounded-none">Prev</button>
-              <button onClick={next} className="flex-1 bg-[var(--muted)] border border-[var(--border)] py-3 text-sm font-medium rounded-none">Next</button>
-              <button onClick={()=>toggleFavorite(current.stationuuid)} className={`px-4 py-3 text-sm font-bold border rounded-none ${isFav?"bg-[#ff3b30] border-[#ff3b30] text-white":"bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)]"}`}>{isFav?"♥":"♡"}</button>
+            <div className="grid grid-cols-4 gap-2">
+              <button onClick={prev} className="bg-[var(--muted)] border border-[var(--border)] py-3 text-sm font-medium rounded-none">Prev</button>
+              <button onClick={next} className="bg-[var(--muted)] border border-[var(--border)] py-3 text-sm font-medium rounded-none">Next</button>
+              <button onClick={()=>toggleFavorite(current.stationuuid)} className={`py-3 text-sm font-bold border rounded-none ${isFav?"bg-[#ff3b30] border-[#ff3b30] text-white":"bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)]"}`}>{isFav?"♥":"♡"}</button>
+              <button onClick={powerOff} className="bg-[#1d1d1f] border border-[#ff3b30]/40 text-[#ff3b30] py-3 text-sm font-bold rounded-none flex items-center justify-center gap-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4"/><circle cx="12" cy="12" r="8"/></svg>
+                Off
+              </button>
             </div>
             <div className="flex items-center gap-2 bg-[var(--muted)]/60 border border-[var(--border)] px-3 py-2.5">
               <span className="text-xs text-[var(--muted-foreground)] w-10">{isMuted?"Muted":Math.round(volume*100)+"%"}</span>

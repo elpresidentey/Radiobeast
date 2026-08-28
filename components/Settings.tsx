@@ -5,7 +5,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { useTheme } from "@/components/ThemeProvider";
 
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { dataSaver, toggleDataSaver, preferSelfHost, togglePreferSelfHost, icecastFallback, toggleIcecastFallback } = usePlayerStore();
+  const { dataSaver, toggleDataSaver, preferSelfHost, togglePreferSelfHost, icecastFallback, toggleIcecastFallback, powerOff } = usePlayerStore();
   const { theme, toggle } = useTheme();
   const [canInstall, setCanInstall] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -124,6 +124,15 @@ NEXT_PUBLIC_RADIO_SELF_HOST=https://your-mirror.example.com</pre>
                   <span className={`text-xs font-bold px-2 py-1 border ${dataSaver ? "bg-white text-[#ff3b30] border-white" : "bg-[var(--card)] border-[var(--border)]"}`}>{dataSaver ? "ON · ~30MB/h" : "OFF · ~120MB/h"}</span>
                 </button>
                 <p className="text-[11px] text-[var(--muted-foreground)] mt-2 leading-relaxed">When on, prefers ≤128 kbps streams and hides station images. Square buttons stay sharp — identity preserved.</p>
+              </div>
+
+              <div>
+                <div className="text-xs font-bold tracking-wide text-[var(--muted-foreground)] mb-2">POWER</div>
+                <button onClick={() => { powerOff(); onClose(); }} className="w-full flex items-center justify-center gap-2 bg-[#1d1d1f] border border-[#ff3b30]/40 text-[#ff3b30] hover:bg-[#ff3b30] hover:text-white py-3 text-sm font-bold">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4"/><circle cx="12" cy="12" r="9"/><path d="M12 2a10 10 0 0 1 8 8"/></svg>
+                  Power Off / Exit
+                </button>
+                <p className="text-[11px] text-[var(--muted-foreground)] mt-1">Stops playback. In installed app, attempts to close.</p>
               </div>
 
               <div className="pt-2 border-t border-[var(--border)] text-[11px] text-[var(--muted-foreground)] leading-relaxed">
