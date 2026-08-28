@@ -116,21 +116,16 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-[#0a0a0a]">
       <Header onSearch={handleSearch} searchValue={search} />
 
-      {/* hero — liquid + micro */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="mx-auto w-full max-w-5xl px-5 sm:px-6 pt-8 sm:pt-12 pb-2">
-        <div className="text-center">
-          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="inline-flex items-center gap-2 bg-[var(--muted)]/80 backdrop-blur border border-[var(--border)] px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-[var(--muted-foreground)] liquid">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> 45K+ STATIONS · 200+ COUNTRIES
+      {/* hero — more minimal, airy */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="mx-auto w-full max-w-5xl px-5 sm:px-6 pt-12 sm:pt-20 pb-6">
+        <div className="text-center max-w-[640px] mx-auto">
+          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="inline-flex items-center gap-2 text-[10px] font-medium tracking-[0.16em] text-[var(--muted-foreground)]">
+            <span className="h-1 w-1 bg-emerald-500 animate-pulse" /> LIVE · WORLDWIDE
           </motion.div>
-          <h1 className="mt-4 text-[30px] sm:text-[42px] font-semibold tracking-[-0.03em] leading-[1.05] text-[var(--foreground)]">Radio. Everywhere.</h1>
-          <p className="mt-3 max-w-[520px] mx-auto text-[15px] leading-relaxed text-[var(--muted-foreground)] font-normal">Any station, any country. One tap to play — clean, fast, and light on data.</p>
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
-            {["Afrobeat","Amapiano","Hip hop","Gospel"].map((t,i)=>(
-              <motion.button key={t} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 + i * 0.05 }} whileTap={{ scale: 0.96 }} whileHover={{ y: -1 }} onClick={()=>{ setTag(t.toLowerCase()); setActiveSearch(""); setTab("trending"); }} className="bg-[var(--muted)] text-[var(--foreground)] px-4 py-2 text-[13px] font-medium border border-[var(--border)] hover:bg-[var(--card-hover)] transition-colors rounded-none pressable liquid-shine">{t}</motion.button>
-            ))}
-          </div>
+          <h1 className="mt-3 text-[36px] sm:text-[54px] font-[620] tracking-[-0.04em] leading-[0.95] text-[var(--foreground)]">Radio.<br className="sm:hidden" /> Everywhere.</h1>
+          <p className="mt-4 max-w-[480px] mx-auto text-[15px] sm:text-[16px] leading-[1.6] text-[var(--muted-foreground)] font-normal">Any station, any country. Just press play.</p>
           <AnimatePresence>
-          {dataSaver && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 inline-flex items-center gap-2 bg-[#ff3b30] text-white text-xs font-medium px-3 py-1.5"><span className="h-1.5 w-1.5 bg-white rounded-full animate-pulse" /> Data Saver — low bitrate, images off</motion.div>}
+            {dataSaver && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 inline-flex items-center gap-2 bg-[var(--foreground)] text-[var(--background)] text-xs font-medium px-3 py-1.5"><span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" /> Data Saver</motion.div>}
           </AnimatePresence>
         </div>
       </motion.div>
