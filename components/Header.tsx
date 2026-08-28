@@ -9,7 +9,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
   const [local, setLocal] = useState(searchValue);
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileRef = useRef<HTMLInputElement>(null);
-  const { current, isPlaying, dataSaver, toggleDataSaver } = usePlayerStore();
+  const { current, isPlaying, dataSaver } = usePlayerStore();
   const { theme, toggle } = useTheme();
   const [canInstall, setCanInstall] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -84,7 +84,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
                 <span className="text-[15px] sm:text-[16px] font-black tracking-[-0.03em] text-[var(--foreground)]">RADIOBEAST</span>
                 <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="hidden lg:inline-flex items-center gap-1 bg-[var(--muted)] border border-[var(--border)] px-1.5 py-0.5 rounded-[6px] text-[10px] font-bold tracking-wide text-[var(--muted-foreground)]">LIVE</motion.span>
               </div>
-              <div className="hidden sm:block text-[10px] font-semibold tracking-[0.14em] text-[var(--muted-foreground)] leading-none">WORLD RADIO • 45K+ STATIONS</div>
+              <div className="hidden sm:block text-[10px] font-semibold tracking-[0.14em] text-[var(--muted-foreground)] leading-none">WORLD RADIO</div>
               <div className="sm:hidden text-[10px] font-semibold tracking-[0.12em] text-[var(--muted-foreground)] leading-none">WORLD RADIO</div>
             </div>
           </motion.a>
@@ -142,19 +142,6 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
                 Install App
               </motion.button>
             )}
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={toggleDataSaver}
-              title={dataSaver ? "Data Saver ON — low bitrate, no images (~30 MB/h)" : "Data Saver OFF — best quality (~120 MB/h)"}
-              className={`hidden sm:inline-flex items-center gap-1.5 h-9 px-2.5 text-xs font-bold border rounded-none transition-colors ${dataSaver ? "bg-[#ff3b30] border-[#ff3b30] text-white shadow-sm" : "bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)]"}`}
-            >
-              <span className="relative flex h-2 w-2">
-                <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${dataSaver ? "bg-white animate-ping" : "bg-emerald-500"}`} />
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${dataSaver ? "bg-white" : "bg-emerald-500"}`} />
-              </span>
-              {dataSaver ? "Saver" : "Saver Off"}
-            </motion.button>
-
             <motion.button whileTap={{ scale: 0.92 }} onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings" className="h-9 w-9 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)] transition-colors">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM12 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 7.97 15a1.65 1.65 0 0 0-1-1.51V13a1.65 1.65 0 0 0 1-1.51 1.65 1.65 0 0 0 .33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 7.97a1.65 1.65 0 0 0 1 1.51V9a1.65 1.65 0 0 0-1 1.51 1.65 1.65 0 0 0-.33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 12 15Z"/></svg>
             </motion.button>
@@ -172,9 +159,6 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 15V3M8 11l4 4 4-4"/><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/></svg>
               </motion.button>
             )}
-            <motion.button whileTap={{ scale: 0.92 }} onClick={toggleDataSaver} className={`sm:hidden h-9 w-9 grid place-items-center border rounded-none shrink-0 ${dataSaver ? "bg-[#ff3b30] border-[#ff3b30] text-white shadow-sm" : "bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)]"}`} aria-label="Data saver">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.97 16.97l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.97 7.03l2.83-2.83" /><circle cx="12" cy="12" r="3" /></svg>
-            </motion.button>
             <motion.button whileTap={{ scale: 0.92 }} onClick={() => setSettingsOpen(true)} className="sm:hidden h-9 w-9 grid place-items-center bg-[var(--muted)] border border-[var(--border)] rounded-none text-[var(--muted-foreground)]" aria-label="Settings">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.5 4.5l1.4 1.4M19.5 19.5l-1.4-1.4M1 12h2M21 12h2M4.5 19.5l1.4-1.4M19.5 4.5l-1.4 1.4"/></svg>
             </motion.button>
@@ -204,7 +188,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
             {current ? (
               <span className="text-[11px] font-semibold text-[var(--foreground)] truncate max-w-[150px] flex items-center gap-1.5"><span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isPlaying ? "bg-emerald-500 animate-pulse" : "bg-[var(--border-hover)]"}`} />{current.name}</span>
             ) : (
-              <span className="text-[11px] text-[var(--muted-foreground)]">45k+ stations • PWA ready</span>
+              <span className="text-[11px] text-[var(--muted-foreground)]">PWA ready</span>
             )}
           </div>
         </div>
