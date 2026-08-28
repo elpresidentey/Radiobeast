@@ -5,7 +5,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { useTheme } from "@/components/ThemeProvider";
 
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { dataSaver, toggleDataSaver } = usePlayerStore();
+  const { dataSaver, toggleDataSaver, preferSelfHost, togglePreferSelfHost, icecastFallback, toggleIcecastFallback } = usePlayerStore();
   const { theme, toggle } = useTheme();
   const [canInstall, setCanInstall] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -85,6 +85,34 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
                 </button>
               </div>
 
+              {/* Streaming Sources */}
+              <div>
+                <div className="text-xs font-bold tracking-wide text-[var(--muted-foreground)] mb-2">STREAMING</div>
+                <div className="space-y-2">
+                  <button onClick={togglePreferSelfHost} className={`w-full flex items-center justify-between px-3 py-3 border text-left ${preferSelfHost ? "bg-[#ff3b30] border-[#ff3b30] text-white" : "bg-[var(--muted)] border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--card-hover)]"}`}>
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <span className={`h-8 w-8 grid place-items-center border text-xs ${preferSelfHost ? "bg-white/20 border-white/20" : "bg-[var(--card)] border-[var(--border)]"}`}>◉</span>
+                      <span>Self-hosted mirror<br/><span className="text-[11px] font-normal opacity-80">{typeof window !== "undefined" && (process.env.NEXT_PUBLIC_RADIO_SELF_HOST ? process.env.NEXT_PUBLIC_RADIO_SELF_HOST : "Not set — add NEXT_PUBLIC_RADIO_SELF_HOST")}</span></span>
+                    </span>
+                    <span className={`text-xs font-bold px-2 py-1 border shrink-0 ${preferSelfHost ? "bg-white text-[#ff3b30] border-white" : "bg-[var(--card)] border-[var(--border)]"}`}>{preferSelfHost ? "ON" : "OFF"}</span>
+                  </button>
+                  <button onClick={toggleIcecastFallback} className={`w-full flex items-center justify-between px-3 py-3 border text-left ${icecastFallback ? "bg-[#ff3b30] border-[#ff3b30] text-white" : "bg-[var(--muted)] border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--card-hover)]"}`}>
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      <span className={`h-8 w-8 grid place-items-center border text-xs ${icecastFallback ? "bg-white/20 border-white/20" : "bg-[var(--card)] border-[var(--border)]"}`}>≋</span>
+                      <span>Icecast fallback<br/><span className="text-[11px] font-normal opacity-80">When results &lt;8, enrich via Icecast dir</span></span>
+                    </span>
+                    <span className={`text-xs font-bold px-2 py-1 border shrink-0 ${icecastFallback ? "bg-white text-[#ff3b30] border-white" : "bg-[var(--card)] border-[var(--border)]"}`}>{icecastFallback ? "ON" : "OFF"}</span>
+                  </button>
+                </div>
+                <details className="mt-2 bg-[var(--muted)]/40 border border-[var(--border)] p-2">
+                  <summary className="text-xs font-bold cursor-pointer">How to self-host</summary>
+                  <pre className="text-[11px] leading-relaxed mt-2 whitespace-pre-wrap break-words">docker run -d -p 8080:8080 --name radiobrowser ghcr.io/segler-alex/radiobrowser-api-rust
+# then .env.local:
+NEXT_PUBLIC_RADIO_SELF_HOST=https://your-mirror.example.com</pre>
+                  <p className="text-[11px] text-[var(--muted-foreground)] mt-1">When ON, Radiobeast tries your mirror first, then falls back to de1/de2/nl1. Vercel will use it on next build.</p>
+                </details>
+              </div>
+
               {/* Data */}
               <div>
                 <div className="text-xs font-bold tracking-wide text-[var(--muted-foreground)] mb-2">DATA</div>
@@ -99,7 +127,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
               </div>
 
               <div className="pt-2 border-t border-[var(--border)] text-[11px] text-[var(--muted-foreground)] leading-relaxed">
-                Radiobeast · 45k+ stations via Radio Browser API · Not affiliated · <span className="text-[var(--foreground)] font-medium">PWA ready</span> · v1.0
+                Radiobeast · 45k+ stations via Radio Browser API · {typeof window !== "undefined" && (process.env.NEXT_PUBLIC_RADIO_SELF_HOST ? "Mirror: " + process.env.NEXT_PUBLIC_RADIO_SELF_HOST + " · " : "")}Not affiliated · <span className="text-[var(--foreground)] font-medium">PWA ready</span> · v1.0
               </div>
             </div>
           </motion.div>

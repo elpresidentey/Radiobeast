@@ -32,19 +32,33 @@ export type Country = { name: string; iso_3166_1: string; stationcount: number }
 export type Language = { name: string; iso_639?: string; stationcount: number };
 export type Tag = { name: string; stationcount: number };
 
-const SERVERS = [
+const SELF_HOST = (typeof process !== "undefined" && (process.env.NEXT_PUBLIC_RADIO_SELF_HOST || "").trim()) || "";
+const PUBLIC_SERVERS = [
   "https://de1.api.radio-browser.info",
   "https://de2.api.radio-browser.info",
   "https://nl1.api.radio-browser.info",
 ];
+const SERVERS = SELF_HOST ? [SELF_HOST, ...PUBLIC_SERVERS] : PUBLIC_SERVERS;
 
 let baseUrl = SERVERS[0];
 
-async function fetchWithFallback(path: string, params: Record<string, string> = {}) {
+export function getSelfHost(): string { return SELF_HOST; }
+export function getServers(): string[] { return [...SERVERS]; }
+
+export type FetchOpts = { preferSelfHost?: boolean; allowIcecastFallback?: boolean };
+
+async function fetchWithFallback(path: string, params: Record<string, string> = {}, opts: FetchOpts = {}) {
   const qs = new URLSearchParams(params).toString();
   const suffix = qs ? `?${qs}` : "";
   let lastErr: unknown = null;
-  for (const server of SERVERS) {
+  // honour preferSelfHost setting — if false and SELF_HOST exists, try public first
+  let servers = SERVERS;
+  if (SELF_HOST && opts.preferSelfHost === false) {
+    servers = [...PUBLIC_SERVERS, SELF_HOST];
+  } else if (SELF_HOST && opts.preferSelfHost === true) {
+    servers = [SELF_HOST, ...PUBLIC_SERVERS];
+  }
+  for (const server of servers) {
     try {
       const res = await fetch(`${server}/json${path}${suffix}`, {
         headers: { "User-Agent": "Radiobeast/1.0" },
@@ -87,29 +101,29 @@ export function buildSearchParams(opts: {
   return p;
 }
 
-export async function getStations(opts: Parameters<typeof buildSearchParams>[0] = {}): Promise<Station[]> {
+export async function getStations(opts: Parameters<typeof buildSearchParams>[0] = {}, fetchOpts: FetchOpts = {}): Promise<Station[]> {
   const params = buildSearchParams({ limit: 48, order: "clickcount", reverse: true, ...opts });
-  return fetchWithFallback("/stations/search", params);
+  return fetchWithFallback("/stations/search", params, fetchOpts);
 }
 
-export async function getTopStations(limit = 48): Promise<Station[]> {
-  return fetchWithFallback("/stations/topclick", { limit: String(limit), hidebroken: "true" });
+export async function getTopStations(limit = 48, fetchOpts: FetchOpts = {}): Promise<Station[]> {
+  return fetchWithFallback("/stations/topclick", { limit: String(limit), hidebroken: "true" }, fetchOpts);
 }
-export async function getTopVoted(limit = 48): Promise<Station[]> {
-  return fetchWithFallback("/stations/topvote", { limit: String(limit), hidebroken: "true" });
+export async function getTopVoted(limit = 48, fetchOpts: FetchOpts = {}): Promise<Station[]> {
+  return fetchWithFallback("/stations/topvote", { limit: String(limit), hidebroken: "true" }, fetchOpts);
 }
-export async function getCountries(): Promise<Country[]> {
-  const data: Country[] = await fetchWithFallback("/countries", { hidebroken: "true" });
+export async function getCountries(fetchOpts: FetchOpts = {}): Promise<Country[]> {
+  const data: Country[] = await fetchWithFallback("/countries", { hidebroken: "true" }, fetchOpts);
   return data.sort((a, b) => a.name.localeCompare(b.name));
 }
-export async function getLanguages(): Promise<Language[]> {
-  return fetchWithFallback("/languages", { order: "stationcount", reverse: "true", hidebroken: "true" });
+export async function getLanguages(fetchOpts: FetchOpts = {}): Promise<Language[]> {
+  return fetchWithFallback("/languages", { order: "stationcount", reverse: "true", hidebroken: "true" }, fetchOpts);
 }
-export async function getTags(limit = 50): Promise<Tag[]> {
-  return fetchWithFallback("/tags", { order: "stationcount", reverse: "true", limit: String(limit), hidebroken: "true" });
+export async function getTags(limit = 50, fetchOpts: FetchOpts = {}): Promise<Tag[]> {
+  return fetchWithFallback("/tags", { order: "stationcount", reverse: "true", limit: String(limit), hidebroken: "true" }, fetchOpts);
 }
-export async function getStationByUuid(uuid: string): Promise<Station | null> {
-  const res: Station[] = await fetchWithFallback("/stations/byuuid", { uuids: uuid });
+export async function getStationByUuid(uuid: string, fetchOpts: FetchOpts = {}): Promise<Station | null> {
+  const res: Station[] = await fetchWithFallback("/stations/byuuid", { uuids: uuid }, fetchOpts);
   return res[0] || null;
 }
 export async function clickStation(uuid: string) {
@@ -139,4 +153,42 @@ export async function getSimilarStations(station: Station, limit = 6): Promise<S
   const stations: Station[] = await fetchWithFallback("/stations/search", params);
   // Filter out the current station and limit results
   return stations.filter(s => s.stationuuid !== station.stationuuid).slice(0, limit);
+}
+
+// — Icecast fallback —
+// dir.xiph.org has no stable JSON API, so fallback is a relaxed Radio Browser query
+// mimicking Icecast's looser filters (includes recently broken, random order)
+export async function getIcecastStations(opts: { tag?: string; countrycode?: string; limit?: number; name?: string } = {}): Promise<Station[]> {
+  try {
+    const params = buildSearchParams({
+      tag: opts.tag,
+      countrycode: opts.countrycode,
+      name: opts.name,
+      limit: opts.limit || 24,
+      hidebroken: false,
+      order: "random",
+      reverse: false,
+    });
+    // try public servers directly (skip self-host for fallback diversity)
+    const data: Station[] = await fetchWithFallback("/stations/search", params, { preferSelfHost: false });
+    // filter to only those that look like Icecast (often no HLS, MP3/AAC)
+    return data.filter(s => s.codec && ["MP3","AAC","OGG","OPUS"].includes(s.codec.toUpperCase()));
+  } catch {
+    return [];
+  }
+}
+
+export async function getStationsWithIcecastFallback(
+  opts: Parameters<typeof buildSearchParams>[0] = {},
+  fetchOpts: FetchOpts = {},
+  enableIcecast: boolean = false
+): Promise<Station[]> {
+  const primary = await getStations(opts, fetchOpts);
+  if (!enableIcecast) return primary;
+  // if primary is sparse (<6), enrich with Icecast
+  if (primary.length >= 8) return primary;
+  const icecast = await getIcecastStations({ tag: opts.tag, countrycode: opts.countrycode, limit: 12, name: opts.name });
+  const seen = new Set(primary.map(s => s.stationuuid));
+  const merged = [...primary, ...icecast.filter(s => !seen.has(s.stationuuid))];
+  return merged.slice(0, (opts.limit as number) || 24);
 }

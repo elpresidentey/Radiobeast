@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { StationCard } from "@/components/StationCard";
-import { Station, Country, Tag, getCountries, getTags, getTopStations, getTopVoted, getStations, getStationByUuid } from "@/lib/radio";
+import { Station, Country, Tag, getCountries, getTags, getTopStations, getTopVoted, getStations, getStationByUuid, getStationsWithIcecastFallback, getSelfHost } from "@/lib/radio";
 import { usePlayerStore } from "@/stores/playerStore";
 
 type Tab = "trending" | "top" | "favorites" | "recent";
@@ -28,24 +28,29 @@ export default function Home() {
   const limit = 24;
   const { play } = usePlayerStore();
 
-  const { favorites, recent, setQueue, current, dataSaver } = usePlayerStore();
+  const { favorites, recent, setQueue, current, dataSaver, preferSelfHost, icecastFallback } = usePlayerStore();
   const effectiveLimit = dataSaver ? 16 : limit;
 
-  useEffect(() => { getCountries().then(setCountries).catch(()=>{}); getTags(30).then(setTags).catch(()=>{}); }, []);
+  useEffect(() => {
+    const opts = { preferSelfHost };
+    getCountries(opts).then(setCountries).catch(()=>{});
+    getTags(30, opts).then(setTags).catch(()=>{});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preferSelfHost]);
 
   // Handle shared station URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const stationId = params.get('station');
     if (stationId) {
-      getStationByUuid(stationId).then(station => {
+      getStationByUuid(stationId, { preferSelfHost }).then(station => {
         if (station) {
           play(station);
           window.history.replaceState({}, '', window.location.pathname);
         }
       }).catch(() => {});
     }
-  }, [play]);
+  }, [play, preferSelfHost]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -74,24 +79,37 @@ export default function Home() {
     try{
       let data: Station[]=[]; const off = reset?0:offset;
       const l = effectiveLimit;
+      const fetchOpts = { preferSelfHost };
       if(activeSearch){
-        data=await getStations({ name:activeSearch, countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"clickcount", reverse:true });
+        data=await getStationsWithIcecastFallback({ name:activeSearch, countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"clickcount", reverse:true }, fetchOpts, icecastFallback);
       } else if(tab==="trending"){
-        if(country||tag) data=await getStations({ countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"clickcount", reverse:true });
-        else data=await getTopStations(l+off).then(a=>a.slice(off,off+l));
+        if(country||tag) data=await getStationsWithIcecastFallback({ countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"clickcount", reverse:true }, fetchOpts, icecastFallback);
+        else {
+          const top = await getTopStations(l+off, fetchOpts);
+          data = top.slice(off, off+l);
+          if (icecastFallback && data.length < 6) {
+            const { getIcecastStations } = await import("@/lib/radio");
+            const extra = await getIcecastStations({ limit: l });
+            const seen = new Set(data.map(s=>s.stationuuid));
+            data = [...data, ...extra.filter(s=>!seen.has(s.stationuuid))].slice(0,l);
+          }
+        }
       } else if(tab==="top"){
-        if(country||tag) data=await getStations({ countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"votes", reverse:true });
-        else data=await getTopVoted(l+off).then(a=>a.slice(off,off+l));
+        if(country||tag) data=await getStationsWithIcecastFallback({ countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"votes", reverse:true }, fetchOpts, icecastFallback);
+        else {
+          const top = await getTopVoted(l+off, fetchOpts);
+          data = top.slice(off, off+l);
+        }
       }
       if(dataSaver) data = data.filter(s=> !s.bitrate || s.bitrate <= 128).slice(0,l);
       if(reset){ setStations(data); setOffset(l); } else { setStations(p=>[...p,...data]); setOffset(o=>o+l); }
       if(data.length) setQueue(reset?data:[...stations,...data]);
     }catch(e:unknown){ setError(e instanceof Error?e.message:"Failed to load"); } finally{ setLoading(false); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[tab,activeSearch,country,tag,offset,effectiveLimit,dataSaver]);
+  },[tab,activeSearch,country,tag,offset,effectiveLimit,dataSaver,preferSelfHost,icecastFallback]);
 
   useEffect(()=>{ if(tab==="favorites"||tab==="recent"){ setLoading(false); setStations([]); return; } setOffset(0); fetchStations(true); // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[tab,activeSearch,country,tag,dataSaver]);
+  },[tab,activeSearch,country,tag,dataSaver,preferSelfHost,icecastFallback]);
 
   const displayed: Station[] = useMemo(()=>{
     if(tab==="favorites"){ const pool=[...stations,...recent]; const m=new Map(pool.map(s=>[s.stationuuid,s])); return favorites.map(id=>m.get(id)).filter(Boolean) as Station[]; }
@@ -127,6 +145,12 @@ export default function Home() {
           <AnimatePresence>
             {dataSaver && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 inline-flex items-center gap-2 bg-[var(--foreground)] text-[var(--background)] text-xs font-medium px-3 py-1.5"><span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" /> Data Saver</motion.div>}
           </AnimatePresence>
+          {(preferSelfHost || icecastFallback) && (
+            <div className="mt-3 flex flex-wrap justify-center gap-2 text-[11px] font-medium text-[var(--muted-foreground)]">
+              {preferSelfHost && <span className="inline-flex items-center gap-1 border border-[var(--border)] bg-[var(--muted)] px-2 py-1">Mirror: {getSelfHost() || "not configured"} {getSelfHost() ? "· active" : ""}</span>}
+              {icecastFallback && <span className="inline-flex items-center gap-1 border border-[var(--border)] bg-[var(--muted)] px-2 py-1">Icecast fallback ON</span>}
+            </div>
+          )}
         </div>
       </motion.div>
 

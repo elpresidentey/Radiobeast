@@ -13,6 +13,8 @@ type PlayerState = {
   dataSaver: boolean;
   sleepTimer: number | null; // timestamp when timer should stop
   compactMode: boolean;
+  preferSelfHost: boolean;
+  icecastFallback: boolean;
   // actions
   play: (s: Station) => void;
   toggle: () => void;
@@ -26,6 +28,8 @@ type PlayerState = {
   toggleDataSaver: () => void;
   setSleepTimer: (minutes: number | null) => void;
   toggleCompactMode: () => void;
+  togglePreferSelfHost: () => void;
+  toggleIcecastFallback: () => void;
 };
 
 const FAV_KEY = "radiobeast:favs";
@@ -33,6 +37,8 @@ const RECENT_KEY = "radiobeast:recent";
 const VOL_KEY = "radiobeast:vol";
 const SAVER_KEY = "radiobeast:saver";
 const SLEEP_KEY = "radiobeast:sleep";
+const SELF_HOST_KEY = "radiobeast:preferSelfHost";
+const ICECAST_KEY = "radiobeast:icecastFallback";
 
 function loadFavs(): string[] {
   if (typeof window === "undefined") return [];
@@ -50,6 +56,14 @@ function loadVol(): number {
 function loadSaver(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(SAVER_KEY) === "1";
+}
+function loadPreferSelfHost(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(SELF_HOST_KEY) === "1";
+}
+function loadIcecastFallback(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(ICECAST_KEY) === "1";
 }
 function loadSleepTimer(): number | null {
   if (typeof window === "undefined") return null;
@@ -71,6 +85,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   dataSaver: typeof window !== "undefined" ? loadSaver() : false,
   sleepTimer: typeof window !== "undefined" ? loadSleepTimer() : null,
   compactMode: false,
+  preferSelfHost: typeof window !== "undefined" ? loadPreferSelfHost() : false,
+  icecastFallback: typeof window !== "undefined" ? loadIcecastFallback() : false,
 
   play: (s) => {
     const { recent } = get();
@@ -122,6 +138,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
   toggleCompactMode: () => set((st) => ({ compactMode: !st.compactMode })),
+  togglePreferSelfHost: () => {
+    const next = !get().preferSelfHost;
+    if (typeof window !== "undefined") localStorage.setItem(SELF_HOST_KEY, next ? "1" : "0");
+    set({ preferSelfHost: next });
+  },
+  toggleIcecastFallback: () => {
+    const next = !get().icecastFallback;
+    if (typeof window !== "undefined") localStorage.setItem(ICECAST_KEY, next ? "1" : "0");
+    set({ icecastFallback: next });
+  },
 }));
 
 // hydrate on client
@@ -132,6 +158,8 @@ if (typeof window !== "undefined") {
     const vol = loadVol();
     const saver = loadSaver();
     const sleep = loadSleepTimer();
-    usePlayerStore.setState({ favorites: favs, recent, volume: vol, dataSaver: saver, sleepTimer: sleep });
+    const preferSelfHost = loadPreferSelfHost();
+    const icecastFallback = loadIcecastFallback();
+    usePlayerStore.setState({ favorites: favs, recent, volume: vol, dataSaver: saver, sleepTimer: sleep, preferSelfHost, icecastFallback });
   }, 0);
 }
