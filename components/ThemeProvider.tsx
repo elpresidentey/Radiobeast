@@ -14,15 +14,14 @@ export function useTheme() {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("radiobeast:theme") as Theme | null;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const initial: Theme = saved || (prefersDark ? "dark" : "dark"); // default dark to match existing UX
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time mount hydration from localStorage
     setThemeState(initial);
     document.documentElement.setAttribute("data-theme", initial);
-    setMounted(true);
 
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = (e: MediaQueryListEvent) => {

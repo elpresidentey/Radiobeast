@@ -1,243 +1,424 @@
 "use client";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { StationCard } from "@/components/StationCard";
-import { Station, Country, Tag, getCountries, getTags, getTopStations, getTopVoted, getStations, getStationByUuid, getStationsWithIcecastFallback, getSelfHost } from "@/lib/radio";
+import {
+  Station, Country, Tag, Language,
+  getCountries, getTags, getLanguages, getTopStations, getTopVoted,
+  getStationsWithIcecastFallback, getStationByUuid, getSelfHost,
+} from "@/lib/radio";
 import { usePlayerStore } from "@/stores/playerStore";
 
 type Tab = "trending" | "top" | "favorites" | "recent";
+type Sort = "clicks" | "votes" | "name";
+type View = "grid" | "list";
+
 const COUNTRIES_FALLBACK = ["NG", "US", "GB", "DE", "FR", "IN", "BR", "CA", "ZA", "KE", "GH", "AU"];
 
-function SkeletonCard() {
-  return <div className="h-[300px] border border-[var(--border)] bg-[var(--card)] overflow-hidden animate-pulse"><div className="h-[96px] bg-[var(--muted)]" /><div className="p-3 space-y-3"><div className="h-4 w-3/4 bg-[var(--muted)]" /><div className="h-3 w-1/2 bg-[var(--muted)]" /><div className="h-9 bg-[var(--muted)]" /></div></div>;
+function SkeletonCard({ list }: { list?: boolean }) {
+  if (list) return <div className="h-[76px] rounded-2xl border border-[var(--border)] bg-[var(--card)] animate-pulse" />;
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden animate-pulse">
+      <div className="h-28 bg-[var(--muted)]" />
+      <div className="p-3.5 space-y-3"><div className="h-4 w-3/4 rounded bg-[var(--muted)]" /><div className="h-3 w-1/2 rounded bg-[var(--muted)]" /><div className="h-10 rounded-xl bg-[var(--muted)]" /></div>
+    </div>
+  );
 }
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("trending");
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [country, setCountry] = useState("");
+  const [language, setLanguage] = useState("");
   const [tag, setTag] = useState("");
+  const [sort, setSort] = useState<Sort>("clicks");
+  const [view, setView] = useState<View>("grid");
+  const [showAllTags, setShowAllTags] = useState(false);
   const [countries, setCountries] = useState<Country[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [offset, setOffset] = useState(0);
-  const limit = 24;
-  const { play } = usePlayerStore();
+  const [languages, setLanguages] = useState<Language[]>([]);
 
-  const { favorites, recent, setQueue, current, dataSaver, preferSelfHost, icecastFallback } = usePlayerStore();
-  const effectiveLimit = dataSaver ? 16 : limit;
+  const offsetRef = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const { play, favorites, recent, setQueue, current, dataSaver, preferSelfHost, icecastFallback, clearFavorites, clearRecent } = usePlayerStore();
+  const limit = dataSaver ? 18 : 24;
+
+  // meta lookups
   useEffect(() => {
     const opts = { preferSelfHost };
-    getCountries(opts).then(setCountries).catch(()=>{});
-    getTags(30, opts).then(setTags).catch(()=>{});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    getCountries(opts).then(setCountries).catch(() => {});
+    getTags(40, opts).then(setTags).catch(() => {});
+    getLanguages(opts).then((l) => setLanguages(l.slice(0, 60))).catch(() => {});
   }, [preferSelfHost]);
 
-  // Handle shared station URL
+  // shared ?station= link
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const stationId = params.get('station');
+    const stationId = params.get("station");
     if (stationId) {
-      getStationByUuid(stationId, { preferSelfHost }).then(station => {
-        if (station) {
-          play(station);
-          window.history.replaceState({}, '', window.location.pathname);
-        }
+      getStationByUuid(stationId, { preferSelfHost }).then((station) => {
+        if (station) play(station);
+        window.history.replaceState({}, "", window.location.pathname);
       }).catch(() => {});
     }
   }, [play, preferSelfHost]);
 
-  // Keyboard shortcuts
+  // keyboard: space / arrows — only when a station exists & not typing
   useEffect(() => {
-    const { toggle, next, prev } = usePlayerStore.getState();
     const handleKey = (e: KeyboardEvent) => {
-      // Ignore if typing in input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      
-      if (e.code === 'Space') {
-        e.preventDefault();
-        toggle();
-      } else if (e.code === 'ArrowRight') {
-        e.preventDefault();
-        next();
-      } else if (e.code === 'ArrowLeft') {
-        e.preventDefault();
-        prev();
-      }
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+      const { toggle, next, prev, current } = usePlayerStore.getState();
+      if (!current && (e.code === "Space" || e.code === "ArrowRight" || e.code === "ArrowLeft")) return;
+      if (e.code === "Space") { e.preventDefault(); toggle(); }
+      else if (e.code === "ArrowRight") { e.preventDefault(); next(); }
+      else if (e.code === "ArrowLeft") { e.preventDefault(); prev(); }
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  const fetchStations = useCallback(async (reset=true)=>{
-    setLoading(true); setError(null);
-    try{
-      let data: Station[]=[]; const off = reset?0:offset;
-      const l = effectiveLimit;
+  const orderFor = useCallback((s: Sort) => (s === "votes" ? "votes" : s === "name" ? "name" : "clickcount"), []);
+
+  const fetchStations = useCallback(async (reset = true) => {
+    if (reset) { setLoading(true); } else { setLoadingMore(true); }
+    setError(null);
+    try {
+      const off = reset ? 0 : offsetRef.current;
+      let data: Station[] = [];
       const fetchOpts = { preferSelfHost };
-      if(activeSearch){
-        data=await getStationsWithIcecastFallback({ name:activeSearch, countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"clickcount", reverse:true }, fetchOpts, icecastFallback);
-      } else if(tab==="trending"){
-        if(country||tag) data=await getStationsWithIcecastFallback({ countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"clickcount", reverse:true }, fetchOpts, icecastFallback);
-        else {
-          const top = await getTopStations(l+off, fetchOpts);
-          data = top.slice(off, off+l);
-          if (icecastFallback && data.length < 6) {
-            const { getIcecastStations } = await import("@/lib/radio");
-            const extra = await getIcecastStations({ limit: l });
-            const seen = new Set(data.map(s=>s.stationuuid));
-            data = [...data, ...extra.filter(s=>!seen.has(s.stationuuid))].slice(0,l);
-          }
+      const base = {
+        name: activeSearch || undefined,
+        countrycode: country || undefined,
+        language: language || undefined,
+        tag: tag || undefined,
+        limit, offset: off,
+        order: activeSearch || country || tag || language ? orderFor(sort) : sort === "name" ? "name" : sort === "votes" ? "votes" : "clickcount",
+        reverse: sort !== "name",
+      };
+      if (activeSearch || country || tag || language) {
+        data = await getStationsWithIcecastFallback(base, fetchOpts, icecastFallback);
+      } else if (tab === "trending") {
+        const top = await getTopStations(limit + off, fetchOpts);
+        data = top.slice(off, off + limit);
+        if (icecastFallback && data.length < 6) {
+          const { getIcecastStations } = await import("@/lib/radio");
+          const extra = await getIcecastStations({ limit });
+          const seen = new Set(data.map((s) => s.stationuuid));
+          data = [...data, ...extra.filter((s) => !seen.has(s.stationuuid))].slice(0, limit);
         }
-      } else if(tab==="top"){
-        if(country||tag) data=await getStationsWithIcecastFallback({ countrycode:country||undefined, tag:tag||undefined, limit:l, offset:off, order:"votes", reverse:true }, fetchOpts, icecastFallback);
-        else {
-          const top = await getTopVoted(l+off, fetchOpts);
-          data = top.slice(off, off+l);
-        }
+      } else if (tab === "top") {
+        const top = await getTopVoted(limit + off, fetchOpts);
+        data = top.slice(off, off + limit);
       }
-      if(dataSaver) data = data.filter(s=> !s.bitrate || s.bitrate <= 128).slice(0,l);
-      if(reset){ setStations(data); setOffset(l); } else { setStations(p=>[...p,...data]); setOffset(o=>o+l); }
-      if(data.length) setQueue(reset?data:[...stations,...data]);
-    }catch(e:unknown){ setError(e instanceof Error?e.message:"Failed to load"); } finally{ setLoading(false); }
+      if (dataSaver) data = data.filter((s) => !s.bitrate || s.bitrate <= 128).slice(0, limit);
+      if (sort === "name") data = [...data].sort((a, b) => a.name.localeCompare(b.name));
+
+      if (reset) {
+        setStations(data);
+        offsetRef.current = limit;
+        if (data.length) setQueue(data);
+      } else {
+        setStations((p) => {
+          const seen = new Set(p.map((s) => s.stationuuid));
+          const merged = [...p, ...data.filter((s) => !seen.has(s.stationuuid))];
+          setQueue(merged);
+          return merged;
+        });
+        offsetRef.current = off + limit;
+      }
+      setHasMore(data.length >= Math.min(limit, 12));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load stations. Check your connection and retry.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[tab,activeSearch,country,tag,offset,effectiveLimit,dataSaver,preferSelfHost,icecastFallback]);
+  }, [tab, activeSearch, country, language, tag, sort, limit, dataSaver, preferSelfHost, icecastFallback]);
 
-  useEffect(()=>{ if(tab==="favorites"||tab==="recent"){ setLoading(false); setStations([]); return; } setOffset(0); fetchStations(true); // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[tab,activeSearch,country,tag,dataSaver,preferSelfHost,icecastFallback]);
+  // reset on filter change
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (tab === "favorites" || tab === "recent") { setLoading(false); setStations([]); return; }
+    offsetRef.current = 0;
+    setHasMore(true);
+    fetchStations(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, activeSearch, country, language, tag, sort, dataSaver, preferSelfHost, icecastFallback]);
 
-  const displayed: Station[] = useMemo(()=>{
-    if(tab==="favorites"){ const pool=[...stations,...recent]; const m=new Map(pool.map(s=>[s.stationuuid,s])); return favorites.map(id=>m.get(id)).filter(Boolean) as Station[]; }
-    if(tab==="recent") return recent;
+  // infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || tab === "favorites" || tab === "recent") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore && !error) fetchStations(false);
+      },
+      { rootMargin: "600px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, loading, loadingMore, error, tab]);
+
+  const displayed: Station[] = useMemo(() => {
+    if (tab === "favorites") {
+      const pool = new Map([...stations, ...recent].map((s) => [s.stationuuid, s] as const));
+      // fall back to recent-only hydration is handled below; show what we have
+      return favorites.map((id) => pool.get(id)).filter(Boolean) as Station[];
+    }
+    if (tab === "recent") return recent;
     return stations;
-  },[tab,stations,favorites,recent]);
+  }, [tab, stations, favorites, recent]);
 
-  useEffect(()=>{
-    if(tab!=="favorites"||!favorites.length) return;
-    const poolIds=new Set([...stations,...recent].map(s=>s.stationuuid));
-    const missing=favorites.filter(id=>!poolIds.has(id)).slice(0,6);
-    if(!missing.length) return;
-    import("@/lib/radio").then(({getStationByUuid})=>{ Promise.all(missing.map(id=>getStationByUuid(id))).then(r=>{ const f=r.filter(Boolean) as Station[]; if(f.length) setStations(p=>[...p,...f]); }); });
-  },[tab,favorites,stations,recent]);
+  // hydrate missing favourites (up to 12, not just 6)
+  useEffect(() => {
+    if (tab !== "favorites" || !favorites.length) return;
+    const poolIds = new Set([...stations, ...recent].map((s) => s.stationuuid));
+    const missing = favorites.filter((id) => !poolIds.has(id)).slice(0, 12);
+    if (!missing.length) return;
+    let cancelled = false;
+    import("@/lib/radio").then(({ getStationByUuid }) => {
+      Promise.all(missing.map((id) => getStationByUuid(id).catch(() => null))).then((r) => {
+        if (cancelled) return;
+        const found = r.filter(Boolean) as Station[];
+        if (found.length) setStations((p) => [...p, ...found.filter((s) => !p.some((x) => x.stationuuid === s.stationuuid))]);
+      });
+    });
+    return () => { cancelled = true; };
+  }, [tab, favorites, stations, recent]);
 
-  const handleSearch=(v:string)=>{ setSearch(v); setActiveSearch(v.trim()); setTab("trending"); };
-  const clear=()=>{ setCountry(""); setTag(""); setActiveSearch(""); setSearch(""); };
+  const handleSearch = useCallback((v: string) => {
+    setSearch(v);
+    setActiveSearch(v.trim());
+    setTab("trending");
+  }, []);
 
-  const tabs: [Tab,string][] = [["trending","Trending"],["top","Top Voted"],["favorites",`Favourites${favorites.length?` · ${favorites.length}`:""}`],["recent",`Recent${recent.length?` · ${recent.length}`:""}`]];
+  const clear = () => { setCountry(""); setLanguage(""); setTag(""); setActiveSearch(""); setSearch(""); setSort("clicks"); };
+
+  const surprise = () => {
+    const pool = displayed.length ? displayed : stations;
+    if (!pool.length) return;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    setQueue(pool);
+    play(pick);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  };
+
+  const tabs: [Tab, string][] = [
+    ["trending", "Trending"],
+    ["top", "Top Voted"],
+    ["favorites", `Favourites${favorites.length ? ` · ${favorites.length}` : ""}`],
+    ["recent", `Recent${recent.length ? ` · ${recent.length}` : ""}`],
+  ];
+
+  const hasFilters = !!(country || language || tag || activeSearch || sort !== "clicks");
+  const visibleTags = showAllTags ? tags.slice(0, 30) : tags.slice(0, 12);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0a]">
+    <div className="flex flex-col min-h-screen">
       <Header onSearch={handleSearch} searchValue={search} />
 
-      {/* hero — more minimal, airy */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="mx-auto w-full max-w-5xl px-5 sm:px-6 pt-12 sm:pt-20 pb-6">
-        <div className="text-center max-w-[640px] mx-auto">
-          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="inline-flex items-center gap-2 text-[10px] font-medium tracking-[0.16em] text-[var(--muted-foreground)]">
-            <span className="h-1 w-1 bg-emerald-500 animate-pulse" /> LIVE · WORLDWIDE
-          </motion.div>
-          <h1 className="mt-3 text-[36px] sm:text-[54px] font-[620] tracking-[-0.04em] leading-[0.95] text-[var(--foreground)]">Radio.<br className="sm:hidden" /> Everywhere.</h1>
-          <p className="mt-4 max-w-[480px] mx-auto text-[15px] sm:text-[16px] leading-[1.6] text-[var(--muted-foreground)] font-normal">Any station, any country. Just press play.</p>
-          <AnimatePresence>
-            {dataSaver && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 inline-flex items-center gap-2 bg-[var(--foreground)] text-[var(--background)] text-xs font-medium px-3 py-1.5"><span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" /> Data Saver</motion.div>}
-          </AnimatePresence>
+      {/* hero — compact, actionable */}
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-14 pb-2">
+        <div className="max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-[var(--muted-foreground)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> LIVE · 45,000+ STATIONS · FREE
+          </div>
+          <h1 className="mt-4 text-4xl sm:text-6xl font-extrabold tracking-[-0.04em] leading-[0.98]">
+            Radio.<br className="sm:hidden" /> Everywhere.
+          </h1>
+          <p className="mt-3 text-[15px] sm:text-base leading-relaxed text-[var(--muted-foreground)]">Any station, any country. Press play — or shuffle the planet.</p>
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <button onClick={surprise} disabled={!stations.length} className="rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-5 py-2.5 text-sm font-semibold transition-colors pressable disabled:opacity-40">
+              🔀 Surprise me
+            </button>
+            <a href="#browse" className="rounded-xl border border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)] px-5 py-2.5 text-sm font-semibold transition-colors pressable">Browse stations</a>
+            {dataSaver && <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 text-xs font-bold px-3 py-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Data Saver on</span>}
+          </div>
           {(preferSelfHost || icecastFallback) && (
-            <div className="mt-3 flex flex-wrap justify-center gap-2 text-[11px] font-medium text-[var(--muted-foreground)]">
-              {preferSelfHost && <span className="inline-flex items-center gap-1 border border-[var(--border)] bg-[var(--muted)] px-2 py-1">Mirror: {getSelfHost() || "not configured"} {getSelfHost() ? "· active" : ""}</span>}
-              {icecastFallback && <span className="inline-flex items-center gap-1 border border-[var(--border)] bg-[var(--muted)] px-2 py-1">Icecast fallback ON</span>}
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-medium text-[var(--muted-foreground)]">
+              {preferSelfHost && <span className="rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 px-2 py-1">Mirror: {getSelfHost() || "not configured"}</span>}
+              {icecastFallback && <span className="rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 px-2 py-1">Icecast fallback ON</span>}
             </div>
           )}
         </div>
-      </motion.div>
-
-      {/* controls — Apple clean, minimal */}
-      <div className="mx-auto w-full max-w-5xl px-5 sm:px-6 mt-6">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0 pb-2">
-          <div className="flex items-center bg-[var(--muted)]/60 p-1 gap-1 shrink-0 liquid">
-            {tabs.map(([k,label])=>(
-              <motion.button key={k} whileTap={{ scale: 0.96 }} onClick={()=>setTab(k)} className={`px-4 py-1.5 text-[13px] font-medium whitespace-nowrap shrink-0 rounded-none border transition-colors pressable ${tab===k?"bg-[var(--foreground)] text-[var(--background)] border-[var(--foreground)]":"bg-transparent text-[var(--muted-foreground)] border-transparent hover:text-[var(--foreground)]"}`}>{label}</motion.button>
-            ))}
-          </div>
-          <div className="hidden sm:flex ml-auto items-center gap-2 shrink-0">
-            <select value={country} onChange={e=>setCountry(e.target.value)} className="h-9 bg-[var(--card)] border border-[var(--border)] px-3 text-sm text-[var(--foreground)] rounded-none focus:outline-none">
-              <option value="">All Countries — A to Z</option>
-              {countries.map(c=> <option key={c.iso_3166_1} value={c.iso_3166_1}>{c.name} ({c.stationcount})</option>)}
-              {!countries.length && COUNTRIES_FALLBACK.map(c=> <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select value={tag} onChange={e=>setTag(e.target.value)} className="h-9 bg-[var(--card)] border border-[var(--border)] px-3 text-sm text-[var(--foreground)] rounded-none focus:outline-none">
-              <option value="">All Genres</option>
-              {tags.map(t=> <option key={t.name} value={t.name}>{t.name} ({t.stationcount})</option>)}
-            </select>
-            {(country||tag||activeSearch) && <button onClick={clear} className="h-9 bg-[var(--foreground)] text-[var(--background)] px-4 text-sm font-medium rounded-none hover:opacity-80 transition-opacity">Clear</button>}
-          </div>
-        </div>
-
-        <div className="sm:hidden flex gap-2 mt-2">
-          <select value={country} onChange={e=>setCountry(e.target.value)} className="h-10 flex-1 min-w-0 bg-[var(--card)] border border-[var(--border)] px-2.5 text-[13px] text-[var(--foreground)] rounded-none">
-            <option value="">All Countries — A to Z</option>
-            {countries.map(c=> <option key={c.iso_3166_1} value={c.iso_3166_1}>{c.name}</option>)}
-            {!countries.length && COUNTRIES_FALLBACK.map(c=> <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select value={tag} onChange={e=>setTag(e.target.value)} className="h-10 flex-1 min-w-0 bg-[var(--card)] border border-[var(--border)] px-2.5 text-[13px] text-[var(--foreground)] rounded-none">
-            <option value="">All Genres</option>
-            {tags.map(t=> <option key={t.name} value={t.name}>{t.name}</option>)}
-          </select>
-          {(country||tag||activeSearch) && <button onClick={clear} className="h-10 bg-[var(--foreground)] text-[var(--background)] px-4 text-sm font-medium rounded-none shrink-0">Clear</button>}
-        </div>
-
-        <div className="mt-3 flex gap-1.5 overflow-x-auto scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0 pb-1">
-          {tags.slice(0,10).map((t,i)=>(
-            <motion.button key={t.name} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }} whileTap={{ scale: 0.96 }} onClick={()=>setTag(tag===t.name?"":t.name)} className={`shrink-0 px-3 py-1.5 text-xs font-medium border rounded-none capitalize transition-colors pressable ${tag===t.name?"bg-[#ff3b30] border-[#ff3b30] text-white":"bg-transparent border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--foreground)]"}`}>{t.name}</motion.button>
-          ))}
-        </div>
-
-        {activeSearch && (
-          <div className="mt-3 bg-[var(--card)] border border-[var(--border)] px-3 py-2.5 text-sm text-[var(--muted-foreground)] flex items-center justify-between gap-2">
-            <span className="truncate">Search <b className="text-[var(--foreground)]">&quot;{activeSearch}&quot;</b> — {displayed.length} results</span>
-            <button onClick={clear} className="text-xs font-medium underline underline-offset-4 shrink-0 text-[var(--foreground)] rounded-none">Clear</button>
-          </div>
-        )}
       </div>
 
-      <main className="mx-auto w-full max-w-5xl px-5 sm:px-6 mt-6 flex-1">
-        {loading && stations.length===0 && tab!=="favorites" && tab!=="recent" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {Array.from({length:6}).map((_,i)=><SkeletonCard key={i} />)}
+      {/* controls */}
+      <div id="browse" className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-6 scroll-mt-20">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+          <div className="flex items-center rounded-2xl bg-[var(--muted)]/70 border border-[var(--border)] p-1 gap-1 shrink-0" role="tablist" aria-label="Station lists">
+            {tabs.map(([k, label]) => (
+              <button
+                key={k} role="tab" aria-selected={tab === k}
+                onClick={() => setTab(k)}
+                className={`px-4 py-2 text-[13px] font-semibold whitespace-nowrap shrink-0 rounded-xl transition-colors pressable ${tab === k ? "bg-[var(--foreground)] text-[var(--background)] shadow" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="ml-auto hidden md:flex items-center gap-2 shrink-0">
+            <label className="sr-only" htmlFor="sort">Sort by</label>
+            <select id="sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-10 rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium focus:outline-none focus:border-[var(--accent)]/50">
+              <option value="clicks">Most played</option>
+              <option value="votes">Most loved</option>
+              <option value="name">A – Z</option>
+            </select>
+            <div className="flex rounded-xl border border-[var(--border)] bg-[var(--card)] p-1" role="group" aria-label="Layout">
+              <button onClick={() => setView("grid")} aria-pressed={view === "grid"} aria-label="Grid view" className={`h-8 w-8 grid place-items-center rounded-lg pressable ${view === "grid" ? "bg-[var(--muted)] text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+              </button>
+              <button onClick={() => setView("list")} aria-pressed={view === "list"} aria-label="List view" className={`h-8 w-8 grid place-items-center rounded-lg pressable ${view === "list" ? "bg-[var(--muted)] text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* filter row */}
+        <div className="mt-3 grid grid-cols-2 md:grid-cols-[1fr_1fr_1fr_auto] gap-2">
+          <label className="block">
+            <span className="sr-only">Filter by country</span>
+            <select value={country} onChange={(e) => setCountry(e.target.value)} className="h-11 w-full rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium focus:outline-none focus:border-[var(--accent)]/50">
+              <option value="">🌍 All countries</option>
+              {countries.map((c) => <option key={c.iso_3166_1} value={c.iso_3166_1}>{c.name} ({c.stationcount})</option>)}
+              {!countries.length && COUNTRIES_FALLBACK.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="sr-only">Filter by language</span>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="h-11 w-full rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium focus:outline-none focus:border-[var(--accent)]/50">
+              <option value="">🗣 All languages</option>
+              {languages.map((l) => <option key={l.name} value={l.name}>{l.name} ({l.stationcount})</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="sr-only">Filter by genre</span>
+            <select value={tag} onChange={(e) => setTag(e.target.value)} className="h-11 w-full rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium capitalize focus:outline-none focus:border-[var(--accent)]/50">
+              <option value="">🎶 All genres</option>
+              {tags.map((t) => <option key={t.name} value={t.name}>{t.name} ({t.stationcount})</option>)}
+            </select>
+          </label>
+          <div className="col-span-2 md:col-span-1 flex gap-2">
+            <label className="md:hidden flex-1">
+              <span className="sr-only">Sort by</span>
+              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-11 w-full rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium">
+                <option value="clicks">Most played</option>
+                <option value="votes">Most loved</option>
+                <option value="name">A – Z</option>
+              </select>
+            </label>
+            <button onClick={() => setView(view === "grid" ? "list" : "grid")} aria-label="Toggle layout" className="md:hidden h-11 w-11 grid place-items-center rounded-xl bg-[var(--card)] border border-[var(--border)] shrink-0 pressable">
+              {view === "grid" ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+              )}
+            </button>
+            {hasFilters && <button onClick={clear} className="h-11 rounded-xl bg-[var(--foreground)] text-[var(--background)] px-5 text-sm font-semibold shrink-0 pressable hover:opacity-90">Clear</button>}
+          </div>
+        </div>
+
+        {/* genre pills */}
+        <div className="mt-3 flex gap-1.5 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1" aria-label="Quick genres">
+          {visibleTags.map((t, i) => (
+            <motion.button
+              key={t.name}
+              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.2) }}
+              onClick={() => setTag(tag === t.name ? "" : t.name)}
+              aria-pressed={tag === t.name}
+              className={`shrink-0 px-3.5 py-2 text-xs font-semibold border rounded-full capitalize transition-colors pressable ${tag === t.name ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "bg-[var(--card)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)]"}`}
+            >
+              {t.name}
+            </motion.button>
+          ))}
+          {tags.length > 12 && (
+            <button onClick={() => setShowAllTags((v) => !v)} className="shrink-0 px-3.5 py-2 text-xs font-semibold rounded-full border border-dashed border-[var(--border-hover)] text-[var(--muted-foreground)] pressable">
+              {showAllTags ? "Show less −" : `+${tags.length - 12} more`}
+            </button>
+          )}
+        </div>
+
+        {/* result meta */}
+        <div className="mt-4 flex items-center justify-between gap-3" aria-live="polite">
+          <p className="text-[13px] text-[var(--muted-foreground)] truncate">
+            {activeSearch ? <>Results for <b className="text-[var(--foreground)]">“{activeSearch}”</b> — </> : null}
+            {tab === "favorites" ? `${displayed.length} favourites` : tab === "recent" ? `${displayed.length} recent` : `${displayed.length} stations`}
+            {hasFilters && tab !== "favorites" && tab !== "recent" ? " • filtered" : ""}
+          </p>
+          <div className="flex gap-2 shrink-0">
+            {tab === "favorites" && !!favorites.length && <button onClick={clearFavorites} className="text-xs font-semibold text-red-400 hover:underline">Clear all</button>}
+            {tab === "recent" && !!recent.length && <button onClick={clearRecent} className="text-xs font-semibold text-red-400 hover:underline">Clear</button>}
+            {hasFilters && <button onClick={clear} className="text-xs font-semibold underline underline-offset-4 text-[var(--foreground)]">Reset filters</button>}
+          </div>
+        </div>
+      </div>
+
+      <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-4 flex-1">
+        {loading && stations.length === 0 && tab !== "favorites" && tab !== "recent" ? (
+          <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "flex flex-col gap-2.5 max-w-3xl"}>
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} list={view === "list"} />)}
           </div>
         ) : error ? (
-          <div className="border border-[#ff3b30]/20 bg-[#ff3b30]/5 p-6 text-center">
-            <p className="text-[#ff3b30] font-medium text-sm">{error}</p>
-            <button onClick={()=>fetchStations(true)} className="mt-3 bg-[var(--foreground)] text-[var(--background)] px-5 py-2 text-sm font-medium rounded-none">Retry</button>
+          <div className="rounded-2xl border border-red-500/25 bg-red-500/5 p-8 text-center" role="alert">
+            <p className="text-red-400 font-medium text-sm">{error}</p>
+            <button onClick={() => fetchStations(true)} className="mt-4 rounded-xl bg-[var(--foreground)] text-[var(--background)] px-6 py-2.5 text-sm font-semibold pressable">Retry</button>
           </div>
-        ) : displayed.length===0 ? (
-          <div className="border border-[var(--border)] bg-[var(--card)] p-8 sm:p-10 text-center">
-            <div className="h-12 w-12 mx-auto grid place-items-center bg-[var(--muted)] border border-[var(--border)] text-lg">📻</div>
-            <h3 className="font-semibold mt-3 text-[15px] text-[var(--foreground)]">{tab==="favorites"?"No favourites yet":tab==="recent"?"No recent":"No stations found"}</h3>
-            <p className="text-sm text-[var(--muted-foreground)] mt-1 font-normal">{tab==="favorites"?"Tap ♥ to save stations for quick access.":"Try another search or filter."}</p>
-            {(country||tag||activeSearch) && <button onClick={clear} className="mt-4 bg-[var(--foreground)] text-[var(--background)] px-5 py-2.5 text-sm font-medium rounded-none">Clear filters</button>}
+        ) : displayed.length === 0 ? (
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-10 sm:p-14 text-center">
+            <div className="h-14 w-14 mx-auto grid place-items-center rounded-2xl bg-[var(--muted)] border border-[var(--border)] text-2xl">📻</div>
+            <h3 className="font-bold mt-4 text-base">{tab === "favorites" ? "No favourites yet" : tab === "recent" ? "Nothing played yet" : "No stations found"}</h3>
+            <p className="text-sm text-[var(--muted-foreground)] mt-1.5 max-w-sm mx-auto">{tab === "favorites" ? "Tap the heart on any station to pin it here for instant access." : tab === "recent" ? "Press play on anything — your history lands here." : "Try another search term, or loosen the country / language / genre filters."}</p>
+            <div className="mt-5 flex justify-center gap-2">
+              {hasFilters && <button onClick={clear} className="rounded-xl bg-[var(--foreground)] text-[var(--background)] px-6 py-2.5 text-sm font-semibold pressable">Clear filters</button>}
+              <button onClick={surprise} className="rounded-xl border border-[var(--border)] px-6 py-2.5 text-sm font-semibold pressable">🔀 Surprise me</button>
+            </div>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {displayed.map(s=> <StationCard key={s.stationuuid} station={s} onPlay={()=>setQueue(displayed)} />)}
+            <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "flex flex-col gap-2.5 max-w-3xl"}>
+              <AnimatePresence initial={false}>
+                {displayed.map((s) => <StationCard key={s.stationuuid} station={s} layout={view} onPlay={() => setQueue(displayed)} />)}
+              </AnimatePresence>
             </div>
-            {tab!=="favorites" && tab!=="recent" && (
-              <div className="flex justify-center py-8">
-                <button onClick={()=>fetchStations(false)} disabled={loading} className="w-full sm:w-auto bg-[var(--foreground)] text-[var(--background)] px-8 py-3 text-sm font-medium rounded-none hover:opacity-80 disabled:opacity-50 transition-opacity">{loading?"Loading…":`Load ${effectiveLimit} more`}</button>
+            {loadingMore && (
+              <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4" : "flex flex-col gap-2.5 max-w-3xl mt-2.5"}>
+                {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} list={view === "list"} />)}
+              </div>
+            )}
+            {tab !== "favorites" && tab !== "recent" && (
+              <div ref={sentinelRef} className="flex justify-center py-8">
+                {hasMore ? (
+                  <button onClick={() => fetchStations(false)} disabled={loadingMore} className="w-full sm:w-auto rounded-2xl bg-[var(--foreground)] text-[var(--background)] px-8 py-3 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity pressable">
+                    {loadingMore ? "Loading…" : `Load ${limit} more`}
+                  </button>
+                ) : (
+                  <p className="text-xs text-[var(--muted-foreground)]">You’ve reached the end — try new filters or 🔀 Surprise me.</p>
+                )}
               </div>
             )}
           </>
         )}
       </main>
 
-      <footer className="border-t border-[var(--border)] mt-8 bg-[var(--card)] pb-[76px]">
-        <div className="mx-auto max-w-5xl px-5 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--muted-foreground)] font-normal">
-          <span>Radiobeast · Radio Browser API</span>
-          <span className="flex gap-2 items-center text-[11px] tracking-wide">MP3 · AAC · HLS {current && <span className="border border-[var(--border)] px-2 py-1 text-[var(--muted-foreground)] truncate max-w-[150px]">{current.name}</span>}</span>
+      <footer className="border-t border-[var(--border)] mt-8 bg-[var(--card)]/60 pb-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
+          <span><b className="text-[var(--foreground)]">Radiobeast</b> · 45k+ stations via Radio Browser API · Free, no sign-up</span>
+          <span className="flex gap-2 items-center text-[11px] tracking-wide">
+            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-sans">Space</kbd> play
+            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-sans">←→</kbd> zap
+            {current && <span className="rounded-lg border border-[var(--border)] px-2 py-1 truncate max-w-[160px]">♪ {current.name}</span>}
+          </span>
         </div>
       </footer>
     </div>

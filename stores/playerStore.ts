@@ -30,6 +30,8 @@ type PlayerState = {
   toggleCompactMode: () => void;
   togglePreferSelfHost: () => void;
   toggleIcecastFallback: () => void;
+  clearFavorites: () => void;
+  clearRecent: () => void;
   powerOff: () => void;
 };
 
@@ -149,10 +151,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (typeof window !== "undefined") localStorage.setItem(ICECAST_KEY, next ? "1" : "0");
     set({ icecastFallback: next });
   },
+  clearFavorites: () => {
+    if (typeof window !== "undefined") localStorage.setItem(FAV_KEY, "[]");
+    set({ favorites: [] });
+  },
+  clearRecent: () => {
+    if (typeof window !== "undefined") localStorage.setItem(RECENT_KEY, "[]");
+    set({ recent: [] });
+  },
   powerOff: () => {
     set({ isPlaying: false, current: null });
     if (typeof window !== "undefined") {
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
       if (isStandalone) {
         try { window.close(); } catch {}
         // fallback for PWA: try to exit via history

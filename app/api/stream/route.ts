@@ -22,7 +22,6 @@ export async function GET(req: NextRequest) {
         "Icy-MetaData": "1",
         Accept: "*/*",
       },
-      // @ts-ignore — Next fetch has next/revalidate but we want no cache
       cache: "no-store",
     });
     if (!upstream.body) return new Response("No stream body", { status: 502 });

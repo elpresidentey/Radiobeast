@@ -1,17 +1,25 @@
 "use client";
 import { useEffect, useState } from "react";
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+type StandaloneNavigator = Navigator & { standalone?: boolean };
+type DeferredWindow = typeof window & { deferredPrompt?: BeforeInstallPromptEvent };
+
 export function PWARegister() {
   const [updateReady, setUpdateReady] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showIOSHint, setShowIOSHint] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- one-time mount hydration: standalone/PWA state lives outside React */
   useEffect(() => {
     // check standalone
-    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as StandaloneNavigator).standalone;
     setIsStandalone(!!standalone);
     // dismissed check (24h)
     const d = localStorage.getItem("radiobeast:pwa-dismissed");
@@ -45,8 +53,9 @@ export function PWARegister() {
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
-      (window as any).deferredPrompt = e;
+      const prompt = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(prompt);
+      (window as DeferredWindow).deferredPrompt = prompt;
       window.dispatchEvent(new CustomEvent("pwa:installable"));
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall as EventListener);
@@ -66,6 +75,7 @@ export function PWARegister() {
       navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
     };
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const doUpdate = () => {
     navigator.serviceWorker.getRegistration().then((reg) => reg?.waiting?.postMessage("SKIP_WAITING"));
@@ -73,7 +83,7 @@ export function PWARegister() {
   };
 
   const doInstall = async () => {
-    const prompt = deferredPrompt || (window as any).deferredPrompt;
+    const prompt = deferredPrompt || (window as DeferredWindow).deferredPrompt;
     if (!prompt) {
       // fallback for iOS/manual
       setShowIOSHint(true);

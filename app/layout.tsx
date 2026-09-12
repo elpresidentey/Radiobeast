@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PWARegister />
           {children}
           <GlobalPlayer />
-          <div className="h-[76px] shrink-0" />
+          <div className="h-[92px] shrink-0" aria-hidden="true" />
         </ThemeProvider>
         {/* theme init without React script tag — avoids Next hydration error */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var s=localStorage.getItem('radiobeast:theme');var t=s||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})()` }} />

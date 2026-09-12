@@ -19,7 +19,7 @@ export function useAudioPlayer() {
     // no crossOrigin — many Icecast servers don't send CORS, and anonymous would block playback
     a.crossOrigin = null;
     a.preload = "none";
-    // @ts-ignore — playsInline for iOS
+    // @ts-expect-error — playsInline is video-only in TS DOM lib, but works at runtime on iOS audio
     a.playsInline = true;
     audioRef.current = a;
 

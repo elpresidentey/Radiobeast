@@ -45,33 +45,78 @@ let baseUrl = SERVERS[0];
 export function getSelfHost(): string { return SELF_HOST; }
 export function getServers(): string[] { return [...SERVERS]; }
 
-export type FetchOpts = { preferSelfHost?: boolean; allowIcecastFallback?: boolean };
+export type FetchOpts = { preferSelfHost?: boolean; allowIcecastFallback?: boolean; bypassCache?: boolean };
+
+// Simple client-side cache with TTL (5 minutes to match server revalidate)
+const cache = new Map<string, { data: unknown; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(path: string, params: Record<string, string> = {}, opts: FetchOpts = {}): string {
+  return `${path}|${JSON.stringify(params)}|${JSON.stringify(opts)}`;
+}
+
+function getFromCache(key: string): unknown | null {
+  const cached = cache.get(key);
+  if (!cached) return null;
+  const now = Date.now();
+  if (now - cached.timestamp > CACHE_TTL) {
+    cache.delete(key);
+    return null;
+  }
+  return cached.data;
+}
+
+function setInCache(key: string, data: unknown): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}
 
 async function fetchWithFallback(path: string, params: Record<string, string> = {}, opts: FetchOpts = {}) {
+  // Bypass cache if requested
+  if (opts.bypassCache) {
+    // We'll still fetch and update cache below, but skip the cache read
+  } else {
+    const key = getCacheKey(path, params, opts);
+    const cached = getFromCache(key);
+    if (cached !== null) return cached;
+  }
+
   const qs = new URLSearchParams(params).toString();
   const suffix = qs ? `?${qs}` : "";
   let lastErr: unknown = null;
-  // honour preferSelfHost setting — if false and SELF_HOST exists, try public first
+
+  // Determine server order based on opts
   let servers = SERVERS;
   if (SELF_HOST && opts.preferSelfHost === false) {
     servers = [...PUBLIC_SERVERS, SELF_HOST];
   } else if (SELF_HOST && opts.preferSelfHost === true) {
     servers = [SELF_HOST, ...PUBLIC_SERVERS];
   }
-  for (const server of servers) {
-    try {
-      const res = await fetch(`${server}/json${path}${suffix}`, {
-        headers: { "User-Agent": "Radiobeast/1.0" },
-        next: { revalidate: 300 },
-      });
+
+  // Start fetches for all servers in parallel, use first successful response
+  const promises = servers.map(server => 
+    fetch(`${server}/json${path}${suffix}`, {
+      headers: { "User-Agent": "Radiobeast/1.0" },
+      next: { revalidate: 300 },
+    })
+    .then(res => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      baseUrl = server;
-      return await res.json();
-    } catch (e) {
-      lastErr = e;
+      baseUrl = server; // Update baseUrl to the server that responded
+      return res.json();
+    })
+  );
+
+  try {
+    const data = await Promise.race(promises);
+    // Cache the successful response (unless bypassed)
+    if (!opts.bypassCache) {
+      const key = getCacheKey(path, params, opts);
+      setInCache(key, data);
     }
+    return data;
+  } catch (err) {
+    lastErr = err;
+    throw lastErr;
   }
-  throw lastErr;
 }
 
 // Helpers to build search params
