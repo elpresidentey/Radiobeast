@@ -82,7 +82,6 @@ async function fetchWithFallback(path: string, params: Record<string, string> = 
 
   const qs = new URLSearchParams(params).toString();
   const suffix = qs ? `?${qs}` : "";
-  let lastErr: unknown = null;
 
   // Determine server order based on opts
   let servers = SERVERS;
@@ -92,30 +91,34 @@ async function fetchWithFallback(path: string, params: Record<string, string> = 
     servers = [SELF_HOST, ...PUBLIC_SERVERS];
   }
 
-  // Start fetches for all servers in parallel, use first successful response
-  const promises = servers.map(server => 
+  // Fire at all servers in parallel, use the first SUCCESSFUL response.
+  // (Promise.race would fail the whole call if the fastest server errors —
+  // e.g. one mirror with dead DNS rejects instantly while healthy ones lag.)
+  const promises = servers.map(server =>
     fetch(`${server}/json${path}${suffix}`, {
-      headers: { "User-Agent": "Radiobeast/1.0" },
+      signal: AbortSignal.timeout(12000),
+      // NOTE: browsers strip User-Agent (forbidden header) — harmless here;
+      // the header only takes effect in server/proxy contexts.
       next: { revalidate: 300 },
     })
     .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} from ${server}`);
       baseUrl = server; // Update baseUrl to the server that responded
       return res.json();
     })
   );
 
   try {
-    const data = await Promise.race(promises);
+    const data = await Promise.any(promises);
     // Cache the successful response (unless bypassed)
     if (!opts.bypassCache) {
       const key = getCacheKey(path, params, opts);
       setInCache(key, data);
     }
     return data;
-  } catch (err) {
-    lastErr = err;
-    throw lastErr;
+  } catch {
+    // Promise.any rejects with AggregateError when EVERY server failed
+    throw new Error("All radio servers unreachable — check your connection (or ad-blocker/DNS) and retry.");
   }
 }
 
