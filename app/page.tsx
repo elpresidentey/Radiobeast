@@ -9,6 +9,29 @@ import {
   getCountries, getTags, getLanguages, getTopStations, getTopVoted,
   getStationsWithIcecastFallback, getStationByUuid,
 } from "@/lib/radio";
+
+// Tags that are NOT genres — filter them out of the pill list
+const NON_GENRE = new Set([
+  "music", "radio", "fm", "hd", "live", "stream", "online", "web", "internet",
+  "estación", "estacion", "emisora", "entretenimiento", "música", "musica",
+  "música en español", "música pop", "música rock", "música latina",
+  "pop music", "top 40", "top hits", "hits", "best", "popular",
+  "public radio", "community radio", "college radio", "student radio",
+  "local news", "local", "regional", "nacional", "norteamérica",
+  "latinoamérica", "américa", "méxico", "español", "english", "spanish",
+  "french", "german", "arabic", "chinese", "japanese", "korean", "portuguese",
+  "deutsch", "français", "italiano", "russian", "hindi", "turkish",
+  "moi merino", "world", "world music", "various", "misc",
+  "blog", "info", "noticias", "noticia", "deportes", "cultura",
+]);
+function isGenre(t: Tag): boolean {
+  const n = t.name.toLowerCase().trim();
+  if (NON_GENRE.has(n)) return false;
+  if (n.length < 2) return false;
+  // skip if it's just a country/language name (no spaces unless it's a known compound)
+  if (/^[A-Z][a-z]+$/.test(t.name) && t.stationcount < 200) return false;
+  return true;
+}
 import { usePlayerStore } from "@/stores/playerStore";
 
 type Tab = "trending" | "top" | "favorites" | "recent";
@@ -63,7 +86,7 @@ export default function Home() {
   useEffect(() => {
     const opts = { preferSelfHost };
     getCountries(opts).then(setCountries).catch(() => {});
-    getTags(40, opts).then(setTags).catch(() => {});
+    getTags(60, opts).then((all) => setTags(all.filter(isGenre).slice(0, 30))).catch(() => {});
     getLanguages(opts).then((l) => setLanguages(l.slice(0, 60))).catch(() => {});
   }, [preferSelfHost]);
 
