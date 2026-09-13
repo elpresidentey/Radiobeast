@@ -12,13 +12,12 @@ export function useAudioPlayer() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [playingOffline, setPlayingOffline] = useState(false);
-  const retryCountRef = useRef(0);
-  const maxRetries = 3;
+  // Track what fallback stage we're in to avoid infinite loops
+  const fallbackRef = useRef(0);
 
   // create audio element once
   useEffect(() => {
     const a = new Audio();
-    // no crossOrigin — many Icecast servers don't send CORS, and anonymous would block playback
     a.crossOrigin = null;
     a.preload = "none";
     // @ts-expect-error — playsInline is video-only in TS DOM lib, but works at runtime on iOS audio
@@ -29,35 +28,12 @@ export function useAudioPlayer() {
     const onPause = () => setPlaying(false);
     const onWaiting = () => setLoading(true);
     const onCanPlay = () => setLoading(false);
-    const onError = () => {
-      retryCountRef.current++;
-      if (retryCountRef.current <= maxRetries) {
-        setError(`Retrying... (${retryCountRef.current}/${maxRetries})`);
-        setLoading(true);
-        setTimeout(() => {
-          if (a.src) {
-            a.load();
-            a.play().catch(() => {
-              setError("Stream unavailable after retries");
-              setLoading(false);
-              setPlaying(false);
-            });
-          }
-        }, 2000 * retryCountRef.current);
-      } else {
-        setError("Stream unavailable");
-        setLoading(false);
-        setPlaying(false);
-        retryCountRef.current = 0;
-      }
-    };
     const onEnded = () => setPlaying(false);
 
     a.addEventListener("play", onPlay);
     a.addEventListener("pause", onPause);
     a.addEventListener("waiting", onWaiting);
     a.addEventListener("canplay", onCanPlay);
-    a.addEventListener("error", onError);
     a.addEventListener("ended", onEnded);
 
     // Media Session
@@ -76,7 +52,6 @@ export function useAudioPlayer() {
       a.removeEventListener("pause", onPause);
       a.removeEventListener("waiting", onWaiting);
       a.removeEventListener("canplay", onCanPlay);
-      a.removeEventListener("error", onError);
       a.removeEventListener("ended", onEnded);
       a.src = "";
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
@@ -89,14 +64,14 @@ export function useAudioPlayer() {
     audioRef.current.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
 
-  // source change
+  // source change — handles all fallback logic internally
   useEffect(() => {
     if (!audioRef.current || !current) return;
     const a = audioRef.current;
     setError(null);
     setLoading(true);
     setPlayingOffline(false);
-    retryCountRef.current = 0; // Reset retry count on source change
+    fallbackRef.current = 0;
 
     // cleanup previous hls
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
@@ -123,82 +98,105 @@ export function useAudioPlayer() {
       return;
     }
 
-    let url = current.url_resolved || current.url;
-    // fix: http on https page is blocked — try to upgrade or use proxy
+    const originalUrl = current.url_resolved || current.url;
     const isHttpsPage = typeof location !== "undefined" && location.protocol === "https:";
-    const isHttp = url.startsWith("http://");
+    const isHttp = originalUrl.startsWith("http://");
+
+    // Build ordered list of URLs to try
+    const candidates: string[] = [];
     if (isHttp && isHttpsPage) {
-      // try https upgrade first; if that fails we'll fallback to proxy
-      const httpsUrl = url.replace("http://", "https://");
-      // we will try httpsUrl first, proxy as last resort
-      url = httpsUrl;
-    }
-
-    // only treat as HLS if URL is m3u8 or m3u; hls flag alone is unreliable (many MP3 have hls=1)
-    const isHls = url.includes(".m3u8") || url.includes(".m3u");
-
-    if (isHls && Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true, lowLatencyMode: false });
-      hlsRef.current = hls;
-      hls.loadSource(url);
-      hls.attachMedia(a);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        a.play().catch((e) => {
-          const m = (e as Error)?.message || "";
-          if (m.includes("NotAllowedError") || m.includes("NotAllowed")) setError("Tap Play to start audio");
-          else setError("Autoplay blocked — tap Play again");
-          setLoading(false);
-        });
-      });
-      hls.on(Hls.Events.ERROR, (_evt, data) => {
-        if (data.fatal) {
-          retryCountRef.current++;
-          if (retryCountRef.current <= maxRetries) {
-            setError(`Retrying... (${retryCountRef.current}/${maxRetries})`);
-            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-              setTimeout(() => hls.startLoad(), 2000 * retryCountRef.current);
-            } else {
-              hls.recoverMediaError();
-            }
-          } else {
-            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-              // if we tried https upgrade and it failed, try proxy
-              if (isHttp && isHttpsPage) {
-                hls.destroy(); hlsRef.current = null;
-                const proxy = `/api/stream?url=${encodeURIComponent(current.url_resolved || current.url)}`;
-                a.src = proxy;
-                a.play().catch(() => setError("Stream blocked (http). Try another station"));
-              } else hls.startLoad();
-            } else {
-              hls.destroy(); hlsRef.current = null;
-              a.src = url;
-              a.play().catch(() => setError("Stream unavailable — try another"));
-            }
-            retryCountRef.current = 0;
-          }
-        }
-      });
+      candidates.push(originalUrl.replace("http://", "https://")); // 1. try HTTPS upgrade
+      candidates.push(`/api/stream?url=${encodeURIComponent(originalUrl)}`); // 2. proxy
     } else {
-      a.src = url;
-      a.play().catch((e) => {
-        const msg = (e as Error)?.message || "";
-        if (msg.includes("NotAllowedError")) {
-          setError("Tap Play to start");
-          setLoading(false);
-          return;
-        }
-        // if https upgrade failed, try proxy for original http
-        if (isHttp && isHttpsPage && url.startsWith("https://")) {
-          const proxy = `/api/stream?url=${encodeURIComponent(current.url_resolved || current.url)}`;
-          a.src = proxy;
-          a.play().catch(() => setError("Stream unavailable — try another station"));
-          return;
-        }
-        if (url.startsWith("http://") && isHttpsPage) setError("Insecure http stream blocked on https. Using proxy…");
-        else setError("Stream unavailable — try another station");
-        setLoading(false);
-      });
+      candidates.push(originalUrl); // just try the URL directly
     }
+
+    function tryNextCandidate() {
+      if (fallbackRef.current >= candidates.length) {
+        setError("Stream unavailable — try another station");
+        setLoading(false);
+        setPlaying(false);
+        return;
+      }
+      const url = candidates[fallbackRef.current];
+      fallbackRef.current++;
+      tryUrl(url);
+    }
+
+    function tryUrl(url: string) {
+      // only treat as HLS if URL is m3u8 or m3u
+      const isHls = url.includes(".m3u8") || url.includes(".m3u");
+
+      if (isHls && Hls.isSupported()) {
+        const hls = new Hls({ enableWorker: true, lowLatencyMode: false });
+        hlsRef.current = hls;
+        hls.loadSource(url);
+        hls.attachMedia(a);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          a.play().catch((e) => {
+            const m = (e as Error)?.message || "";
+            if (m.includes("NotAllowedError")) setError("Tap Play to start audio");
+            else setError("Autoplay blocked — tap Play again");
+            setLoading(false);
+          });
+        });
+        hls.on(Hls.Events.ERROR, (_evt, data) => {
+          if (data.fatal) {
+            hls.destroy();
+            hlsRef.current = null;
+            // Try next candidate instead of retrying the same broken URL
+            if (fallbackRef.current < candidates.length) {
+              setError(`Trying fallback...`);
+              setTimeout(tryNextCandidate, 500);
+            } else {
+              setError("Stream unavailable — try another station");
+              setLoading(false);
+              setPlaying(false);
+            }
+          }
+        });
+      } else {
+        // Direct audio (MP3/AAC/etc)
+        a.src = url;
+        a.play().catch((e) => {
+          const msg = (e as Error)?.message || "";
+          if (msg.includes("NotAllowedError")) {
+            setError("Tap Play to start");
+            setLoading(false);
+            return;
+          }
+          // Try next candidate
+          if (fallbackRef.current < candidates.length) {
+            setTimeout(tryNextCandidate, 300);
+          } else {
+            setError("Stream unavailable — try another station");
+            setLoading(false);
+            setPlaying(false);
+          }
+        });
+        // Also listen for error event for network failures (not just play() rejection)
+        const onError = () => {
+          a.removeEventListener("error", onError);
+          if (fallbackRef.current < candidates.length) {
+            setTimeout(tryNextCandidate, 300);
+          } else {
+            setError("Stream unavailable — try another station");
+            setLoading(false);
+            setPlaying(false);
+          }
+        };
+        a.addEventListener("error", onError);
+        // Clean up error listener on next source change
+        const cleanup = () => { a.removeEventListener("error", onError); };
+        // Store cleanup for next effect run
+        const prevCleanup = (a as HTMLAudioElement & { _cleanupOffline?: () => void })._cleanupOffline;
+        if (prevCleanup) prevCleanup();
+        (a as HTMLAudioElement & { _cleanupOffline?: () => void })._cleanupOffline = cleanup;
+      }
+    }
+
+    // Start trying candidates
+    tryNextCandidate();
 
     // click counting
     clickStation(current.stationuuid);

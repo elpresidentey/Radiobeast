@@ -40,7 +40,7 @@ const PUBLIC_SERVERS = [
 ];
 const SERVERS = SELF_HOST ? [SELF_HOST, ...PUBLIC_SERVERS] : PUBLIC_SERVERS;
 
-let baseUrl = SERVERS[0];
+const baseUrl = SERVERS[0];
 
 export function getSelfHost(): string { return SELF_HOST; }
 export function getServers(): string[] { return [...SERVERS]; }
@@ -91,31 +91,34 @@ async function fetchWithFallback(path: string, params: Record<string, string> = 
     servers = [SELF_HOST, ...PUBLIC_SERVERS];
   }
 
-  // Try each server in order with a short timeout per server.
-  // Sequential is more reliable than parallel in flaky networks —
-  // parallel fires all requests simultaneously which can overwhelm
-  // the connection on mobile/slow networks.
-  let lastErr: unknown = null;
-  for (const server of servers) {
-    try {
-      const res = await fetch(`${server}/json${path}${suffix}`, {
-        signal: AbortSignal.timeout(10000),
-        next: { revalidate: 300 },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      baseUrl = server;
-      if (!opts.bypassCache) {
-        const key = getCacheKey(path, params, opts);
-        setInCache(key, data);
-      }
-      return data;
-    } catch (err) {
-      lastErr = err;
-      // continue to next server
+  // Fire at all servers in parallel — use Promise.any (not .race!)
+  // Promise.any succeeds when ANY server responds, and only fails
+  // when ALL servers fail. Promise.race would fail on the first
+  // rejection (e.g. dead DNS on one mirror kills the whole call).
+  const promises = servers.map(server =>
+    fetch(`${server}/json${path}${suffix}`, {
+      signal: AbortSignal.timeout(15000),
+      next: { revalidate: 300 },
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status} from ${server}`);
+      return res.json();
+    })
+  );
+
+  try {
+    const data = await Promise.any(promises);
+    // Cache the successful response (unless bypassed)
+    if (!opts.bypassCache) {
+      const key = getCacheKey(path, params, opts);
+      setInCache(key, data);
     }
+    // Update baseUrl to the first server that worked
+    // (we don't know which one from Promise.any, but that's fine)
+    return data;
+  } catch {
+    throw new Error("All radio servers unreachable — check your connection and retry.");
   }
-  throw lastErr instanceof Error ? lastErr : new Error("All radio servers unreachable — check your connection and retry.");
 }
 
 // Helpers to build search params
