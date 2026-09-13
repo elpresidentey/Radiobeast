@@ -44,23 +44,28 @@ export function KeyboardShortcuts() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed left-1/2 top-1/2 z-[81] -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-[360px] rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl p-5"
+            className="fixed left-1/2 top-1/2 z-[81] -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-[380px] rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/30 p-6"
             role="dialog"
             aria-label="Keyboard shortcuts"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold">Keyboard Shortcuts</h2>
-              <button onClick={() => setOpen(false)} aria-label="Close" className="h-7 w-7 grid place-items-center rounded-full bg-[var(--muted)] border border-[var(--border)] text-sm leading-none pressable">×</button>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-[15px] font-bold">Keyboard Shortcuts</h2>
+                <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5">Navigate like a power user</p>
+              </div>
+              <button onClick={() => setOpen(false)} aria-label="Close" className="h-8 w-8 grid place-items-center rounded-full bg-[var(--muted)] border border-[var(--border)] text-sm leading-none pressable">×</button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {SHORTCUTS.map((s) => (
-                <div key={s.keys} className="flex items-center justify-between py-1.5">
-                  <span className="text-sm text-[var(--muted-foreground)]">{s.label}</span>
-                  <kbd className="rounded-lg border border-[var(--border)] bg-[var(--muted)] px-2.5 py-1 text-xs font-semibold font-mono min-w-[32px] text-center">{s.keys}</kbd>
+                <div key={s.keys} className="flex items-center justify-between py-2.5 px-1 rounded-lg hover:bg-[var(--muted)]/50 transition-colors">
+                  <span className="text-[13px] text-[var(--muted-foreground)]">{s.label}</span>
+                  <kbd className="rounded-lg border border-[var(--border)] bg-[var(--muted)] px-2.5 py-1 text-[11px] font-bold font-mono min-w-[36px] text-center text-[var(--foreground)]">{s.keys}</kbd>
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-[var(--muted-foreground)] mt-4 text-center">Press <kbd className="rounded border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 text-[10px] font-mono">?</kbd> anytime to toggle this.</p>
+            <div className="mt-5 pt-3 border-t border-[var(--border)] text-[11px] text-[var(--muted-foreground)] text-center">
+              Press <kbd className="rounded border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 text-[10px] font-mono">?</kbd> anytime to toggle
+            </div>
           </motion.div>
         </>
       )}

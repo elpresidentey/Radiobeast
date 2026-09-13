@@ -81,16 +81,17 @@ export function GlobalPlayer() {
           <button onClick={clearError} className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 pressable">Dismiss</button>
         </div>
       )}
-      <div className="h-[2px] w-full bg-[var(--border)] overflow-hidden" aria-hidden="true">
+      <div className="h-[3px] w-full bg-[var(--border)] overflow-hidden" aria-hidden="true">
         <div
           className="h-full"
           style={{
             width: isPlaying ? "100%" : "30%",
             backgroundSize: "200% 100%",
-            backgroundImage: isPlaying ? "linear-gradient(90deg, var(--accent), #ff8a3d, var(--accent))" : undefined,
+            backgroundImage: isPlaying ? "linear-gradient(90deg, var(--accent), #fb923c, var(--accent))" : undefined,
             backgroundColor: isPlaying ? undefined : "var(--border-hover)",
             animation: isPlaying ? "shimmer 1.6s linear infinite" : undefined,
-            transition: "width .4s ease",
+            transition: "width .4s cubic-bezier(.16,1,.3,1)",
+            boxShadow: isPlaying ? "0 0 12px var(--accent)" : undefined,
           }}
         />
       </div>
@@ -98,7 +99,7 @@ export function GlobalPlayer() {
       <div className="mx-auto max-w-6xl px-3 sm:px-4">
         <div className="flex items-center gap-2.5 sm:gap-3 py-2.5">
           {/* art */}
-          <div className="relative h-11 w-11 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--muted)] border border-[var(--border)]">
+          <div className={`relative h-11 w-11 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--muted)] border border-[var(--border)] ${isPlaying ? "shadow-md shadow-[var(--accent)]/10" : ""}`}>
             {current.favicon && !dataSaver ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={current.favicon} alt="" loading="lazy" className="h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
@@ -128,7 +129,7 @@ export function GlobalPlayer() {
             <button onClick={prev} disabled={!queue.length} aria-label="Previous station" className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30 pressable">
               <IconPrev />
             </button>
-            <button onClick={toggle} aria-label={isPlaying ? "Pause" : "Play"} className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--foreground)] text-[var(--background)] shadow-lg hover:opacity-90 pressable">
+            <button onClick={toggle} aria-label={isPlaying ? "Pause" : "Play"} className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--foreground)] text-[var(--background)] shadow-lg shadow-black/20 hover:scale-105 transition-transform pressable">
               {isPlaying ? <IconPause /> : <span className="ml-0.5"><IconPlay /></span>}
             </button>
             <button onClick={next} disabled={!queue.length} aria-label="Next station" className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30 pressable">

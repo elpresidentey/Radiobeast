@@ -131,27 +131,29 @@ export function StationCard({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-colors ${
-        isCurrent ? "border-[var(--accent)]/50 bg-[var(--card)]" : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)]"
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all duration-200 ${
+        isCurrent
+          ? "border-[var(--accent)]/40 bg-[var(--card)] shadow-lg shadow-[var(--accent)]/5"
+          : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)] hover:shadow-md hover:shadow-black/10"
       }`}
     >
-      {/* art header */}
-      <div className="relative h-28 shrink-0 overflow-hidden bg-[var(--muted)]">
+      {/* art header — taller for visual impact */}
+      <div className="relative h-32 shrink-0 overflow-hidden bg-[var(--muted)]">
         {hasArt ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={station.favicon} alt="" loading="lazy" className="card-art absolute inset-0 h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
         ) : (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[var(--muted)] to-[var(--card)]">
-            <span className="text-4xl opacity-25" aria-hidden="true">📻</span>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--muted-foreground)] opacity-20"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md border ${station.lastcheckok ? "bg-black/55 text-emerald-300 border-white/10" : "bg-black/55 text-red-300 border-white/10"}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md border ${station.lastcheckok ? "bg-black/60 text-emerald-300 border-white/10" : "bg-black/60 text-red-300 border-white/10"}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${station.lastcheckok ? "bg-emerald-400 animate-pulse" : "bg-red-400"}`} />
             {station.lastcheckok ? "Live" : "Offline"}
           </span>
@@ -164,7 +166,7 @@ export function StationCard({
         <button
           onClick={doPlay}
           aria-label={isCurrent && isPlaying ? `Pause ${station.name}` : `Play ${station.name}`}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 grid h-12 w-12 place-items-center rounded-full bg-white text-black shadow-xl opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-all hover:scale-105 pressable"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 grid h-12 w-12 place-items-center rounded-full bg-white text-black shadow-xl opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-all duration-200 hover:scale-110 pressable"
         >
           <PlayIcon playing={isCurrent && isPlaying} />
         </button>
@@ -184,38 +186,38 @@ export function StationCard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col p-3.5 gap-2.5">
+      <div className="flex flex-1 flex-col p-4 gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold leading-tight tracking-tight" title={station.name}>{station.name}</h3>
-          <p className="truncate text-xs text-[var(--muted-foreground)] mt-1">{station.country} • {station.language || tags[0] || "Music"}</p>
+          <h3 className="truncate text-[14px] font-bold leading-snug tracking-tight text-[var(--foreground)]" title={station.name}>{station.name}</h3>
+          <p className="truncate text-[12px] text-[var(--muted-foreground)] mt-1">{station.country}{station.language ? ` · ${station.language}` : tags[0] ? ` · ${tags[0]}` : ""}</p>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 min-h-[24px]">
+        <div className="flex flex-wrap gap-1.5 min-h-[22px]">
           {tags.slice(0, 2).map((t) => (
-            <span key={t} className="rounded-md border border-[var(--border)] bg-[var(--muted)]/60 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-[var(--muted-foreground)] uppercase">{t}</span>
+            <span key={t} className="rounded-md bg-[var(--muted)] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[var(--muted-foreground)] uppercase">{t}</span>
           ))}
-          {tags.length === 0 && <span className="rounded-md border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">GENERAL</span>}
+          {tags.length === 0 && <span className="rounded-md bg-[var(--muted)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">GENERAL</span>}
         </div>
 
         <div className="flex items-center gap-2 mt-auto pt-1">
-          <button onClick={doPlay} className={`flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-sm font-semibold rounded-xl pressable ${isCurrent && isPlaying ? "bg-[var(--accent)] text-white" : "bg-[var(--foreground)] text-[var(--background)] hover:opacity-90"}`}>
+          <button onClick={doPlay} className={`flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-[13px] font-bold rounded-xl pressable ${isCurrent && isPlaying ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" : "bg-[var(--foreground)] text-[var(--background)] hover:opacity-90"}`}>
             {isCurrent && isPlaying ? (
               <><span className="h-2 w-2 rounded-full bg-white animate-pulse" /> Listening</>
             ) : (
               <><PlayIcon /> Play</>
             )}
           </button>
-          <button aria-label={isFav ? "Remove from favourites" : "Add to favourites"} aria-pressed={isFav} onClick={() => toggleFavorite(station.stationuuid)} className={`h-10 w-10 grid place-items-center rounded-xl border pressable ${isFav ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}>
+          <button aria-label={isFav ? "Remove from favourites" : "Add to favourites"} aria-pressed={isFav} onClick={() => toggleFavorite(station.stationuuid)} className={`h-10 w-10 grid place-items-center rounded-xl pressable ${isFav ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" : "bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}>
             <span className={isFav ? "animate-heart inline-flex" : "inline-flex"}><HeartIcon filled={isFav} /></span>
           </button>
-          <button aria-label="Share station" onClick={handleShare} title="Share" className="h-10 w-10 grid place-items-center rounded-xl border bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] pressable">
+          <button aria-label="Share station" onClick={handleShare} title="Share" className="h-10 w-10 grid place-items-center rounded-xl bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] pressable">
             {shareState === "done" ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
             ) : (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
             )}
           </button>
-          <button aria-label={showInfo ? "Hide details" : "Show details"} aria-expanded={showInfo} onClick={() => setShowInfo((v) => !v)} className={`h-10 w-10 grid place-items-center rounded-xl border text-xs font-bold pressable ${showInfo ? "bg-[var(--foreground)] text-[var(--background)] border-[var(--foreground)]" : "bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}>i</button>
+          <button aria-label={showInfo ? "Hide details" : "Show details"} aria-expanded={showInfo} onClick={() => setShowInfo((v) => !v)} className={`h-10 w-10 grid place-items-center rounded-xl text-xs font-bold pressable ${showInfo ? "bg-[var(--foreground)] text-[var(--background)]" : "bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}>i</button>
         </div>
 
         <AnimatePresence initial={false}>

@@ -7,7 +7,7 @@ import { CuratedGroups } from "@/components/CuratedGroups";
 import {
   Station, Country, Tag, Language,
   getCountries, getTags, getLanguages, getTopStations, getTopVoted,
-  getStationsWithIcecastFallback, getStationByUuid, getSelfHost,
+  getStationsWithIcecastFallback, getStationByUuid,
 } from "@/lib/radio";
 import { usePlayerStore } from "@/stores/playerStore";
 
@@ -18,11 +18,18 @@ type View = "grid" | "list";
 const COUNTRIES_FALLBACK = ["NG", "US", "GB", "DE", "FR", "IN", "BR", "CA", "ZA", "KE", "GH", "AU"];
 
 function SkeletonCard({ list }: { list?: boolean }) {
-  if (list) return <div className="h-[76px] rounded-2xl border border-[var(--border)] bg-[var(--card)] animate-pulse" />;
+  if (list) return <div className="h-[76px] rounded-2xl border border-[var(--border)] bg-[var(--card)] skeleton" />;
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden animate-pulse">
-      <div className="h-28 bg-[var(--muted)]" />
-      <div className="p-3.5 space-y-3"><div className="h-4 w-3/4 rounded bg-[var(--muted)]" /><div className="h-3 w-1/2 rounded bg-[var(--muted)]" /><div className="h-10 rounded-xl bg-[var(--muted)]" /></div>
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] overflow-hidden">
+      <div className="h-28 skeleton" />
+      <div className="p-3.5 space-y-3">
+        <div className="h-4 w-3/4 rounded-lg skeleton" />
+        <div className="h-3 w-1/2 rounded-lg skeleton" />
+        <div className="flex gap-2">
+          <div className="h-10 flex-1 rounded-xl skeleton" />
+          <div className="h-10 w-10 rounded-xl skeleton" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -49,7 +56,7 @@ export default function Home() {
   const offsetRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const { play, favorites, recent, setQueue, current, dataSaver, preferSelfHost, icecastFallback, clearFavorites, clearRecent } = usePlayerStore();
+  const { play, favorites, recent, setQueue, dataSaver, preferSelfHost, icecastFallback, clearFavorites, clearRecent } = usePlayerStore();
   const limit = dataSaver ? 18 : 24;
 
   // meta lookups
@@ -228,33 +235,34 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <Header onSearch={handleSearch} searchValue={search} />
 
-      {/* hero — compact, actionable */}
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-14 pb-2">
+      {/* hero — compact, premium */}
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-16 pb-4">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-[var(--muted-foreground)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> LIVE · 45,000+ STATIONS · FREE
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-emerald-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            LIVE NOW
           </div>
-          <h1 className="mt-4 text-4xl sm:text-6xl font-extrabold tracking-[-0.04em] leading-[0.98]">
-            Radio.<br className="sm:hidden" /> Everywhere.
+          <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]">
+            Radio.<br className="sm:hidden" />Everywhere.
           </h1>
-          <p className="mt-3 text-[15px] sm:text-base leading-relaxed text-[var(--muted-foreground)]">Any station, any country. Press play — or shuffle the planet.</p>
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <button onClick={surprise} disabled={!stations.length} className="rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-5 py-2.5 text-sm font-semibold transition-colors pressable disabled:opacity-40">
-              🔀 Surprise me
+          <p className="mt-3.5 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]">
+            45,000 live stations. Any country, any genre. Just press play.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              onClick={surprise}
+              disabled={!stations.length}
+              className="rounded-2xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-6 py-3 text-sm font-bold shadow-lg shadow-[var(--accent)]/20 transition-all pressable disabled:opacity-40"
+            >
+              Surprise me
             </button>
-            <a href="#browse" className="rounded-xl border border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)] px-5 py-2.5 text-sm font-semibold transition-colors pressable">Browse stations</a>
-            {dataSaver && <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 text-xs font-bold px-3 py-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Data Saver on</span>}
+            <a
+              href="#browse"
+              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)] px-6 py-3 text-sm font-semibold transition-all pressable"
+            >
+              Browse all
+            </a>
           </div>
-          {(preferSelfHost || icecastFallback) && (
-            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-medium text-[var(--muted-foreground)]">
-              {preferSelfHost && <span className="rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 px-2 py-1">Mirror: {getSelfHost() || "not configured"}</span>}
-              {icecastFallback && <span className="rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 px-2 py-1">Icecast fallback ON</span>}
-            </div>
-          )}
-          <button onClick={() => document.getElementById("browse")?.scrollIntoView({ behavior: "smooth" })} className="mt-6 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors flex flex-col items-center gap-1 text-xs" aria-label="Scroll to station lists">
-            <span className="opacity-60">Browse stations</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-bounce opacity-40"><path d="M6 9l6 6 6-6" /></svg>
-          </button>
         </div>
       </div>
 
@@ -382,18 +390,24 @@ export default function Home() {
             {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} list={view === "list"} />)}
           </div>
         ) : error ? (
-          <div className="rounded-2xl border border-red-500/25 bg-red-500/5 p-8 text-center" role="alert">
-            <p className="text-red-400 font-medium text-sm">{error}</p>
+          <div className="rounded-2xl border border-[var(--destructive)]/20 bg-[var(--destructive)]/5 p-8 text-center" role="alert">
+            <div className="h-10 w-10 mx-auto grid place-items-center rounded-full bg-[var(--destructive)]/10 text-[var(--destructive)] text-lg mb-3">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
+            </div>
+            <p className="text-[var(--destructive)] font-semibold text-sm">{error}</p>
+            <p className="text-[var(--muted-foreground)] text-xs mt-1">Check your connection or try a different server.</p>
             <button onClick={() => fetchStations(true)} className="mt-4 rounded-xl bg-[var(--foreground)] text-[var(--background)] px-6 py-2.5 text-sm font-semibold pressable">Retry</button>
           </div>
         ) : displayed.length === 0 ? (
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-10 sm:p-14 text-center">
-            <div className="h-14 w-14 mx-auto grid place-items-center rounded-2xl bg-[var(--muted)] border border-[var(--border)] text-2xl">📻</div>
-            <h3 className="font-bold mt-4 text-base">{tab === "favorites" ? "No favourites yet" : tab === "recent" ? "Nothing played yet" : "No stations found"}</h3>
-            <p className="text-sm text-[var(--muted-foreground)] mt-1.5 max-w-sm mx-auto">{tab === "favorites" ? "Tap the heart on any station to pin it here for instant access." : tab === "recent" ? "Press play on anything — your history lands here." : "Try another search term, or loosen the country / language / genre filters."}</p>
-            <div className="mt-5 flex justify-center gap-2">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-10 sm:p-16 text-center">
+            <div className="h-16 w-16 mx-auto grid place-items-center rounded-2xl bg-[var(--muted)] border border-[var(--border)] animate-float">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--muted-foreground)]"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+            </div>
+            <h3 className="font-bold mt-5 text-base">{tab === "favorites" ? "No favourites yet" : tab === "recent" ? "Nothing played yet" : "No stations found"}</h3>
+            <p className="text-sm text-[var(--muted-foreground)] mt-2 max-w-sm mx-auto leading-relaxed">{tab === "favorites" ? "Tap the heart on any station to save it here for quick access." : tab === "recent" ? "Hit play on anything — your listening history lands here." : "Try a different search or loosen your filters."}</p>
+            <div className="mt-6 flex justify-center gap-2.5">
               {hasFilters && <button onClick={clear} className="rounded-xl bg-[var(--foreground)] text-[var(--background)] px-6 py-2.5 text-sm font-semibold pressable">Clear filters</button>}
-              <button onClick={surprise} className="rounded-xl border border-[var(--border)] px-6 py-2.5 text-sm font-semibold pressable">🔀 Surprise me</button>
+              <button onClick={surprise} className="rounded-xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)] px-6 py-2.5 text-sm font-semibold pressable">Surprise me</button>
             </div>
           </div>
         ) : (
@@ -423,14 +437,20 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="border-t border-[var(--border)] mt-8 bg-[var(--card)]/60 pb-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
-          <span><b className="text-[var(--foreground)]">Radiobeast</b> · 45k+ stations via Radio Browser API · Free, no sign-up</span>
-          <span className="flex gap-2 items-center text-[11px] tracking-wide">
-            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-sans">Space</kbd> play
-            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-sans">←→</kbd> zap
-            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-sans">?</kbd> help
-            {current && <span className="rounded-lg border border-[var(--border)] px-2 py-1 truncate max-w-[160px]">♪ {current.name}</span>}
+      <footer className="border-t border-[var(--border)] mt-10 pb-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--muted-foreground)]">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded-lg bg-[var(--accent)] grid place-items-center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+            </div>
+            <span className="font-semibold text-[var(--foreground)]">Radiobeast</span>
+            <span className="text-[var(--border-hover)]">·</span>
+            <span>45k+ stations · Free · No sign-up</span>
+          </div>
+          <span className="flex gap-3 items-center text-[11px] tracking-wide">
+            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">Space</kbd> play
+            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">←→</kbd> skip
+            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">?</kbd> help
           </span>
         </div>
       </footer>
