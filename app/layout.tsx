@@ -4,6 +4,8 @@ import "./globals.css";
 import { GlobalPlayer } from "@/components/GlobalPlayer";
 import { PWARegister } from "@/components/PWARegister";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -42,8 +44,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full bg-[var(--background)] text-[var(--foreground)] flex flex-col">
         <ThemeProvider>
           <PWARegister />
+          <OfflineIndicator />
           {children}
           <GlobalPlayer />
+          <KeyboardShortcuts />
           <div className="h-[92px] shrink-0" aria-hidden="true" />
         </ThemeProvider>
         {/* theme init without React script tag — avoids Next hydration error */}

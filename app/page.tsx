@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { StationCard } from "@/components/StationCard";
+import { CuratedGroups } from "@/components/CuratedGroups";
 import {
   Station, Country, Tag, Language,
   getCountries, getTags, getLanguages, getTopStations, getTopVoted,
@@ -250,8 +251,19 @@ export default function Home() {
               {icecastFallback && <span className="rounded-lg border border-[var(--border)] bg-[var(--muted)]/60 px-2 py-1">Icecast fallback ON</span>}
             </div>
           )}
+          <button onClick={() => document.getElementById("browse")?.scrollIntoView({ behavior: "smooth" })} className="mt-6 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors flex flex-col items-center gap-1 text-xs" aria-label="Scroll to station lists">
+            <span className="opacity-60">Browse stations</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-bounce opacity-40"><path d="M6 9l6 6 6-6" /></svg>
+          </button>
         </div>
       </div>
+
+      {/* curated genre groups — only on main view */}
+      {tab === "trending" && !activeSearch && !country && !tag && !language && (
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-8">
+          <CuratedGroups />
+        </div>
+      )}
 
       {/* controls */}
       <div id="browse" className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-6 scroll-mt-20">
@@ -417,6 +429,7 @@ export default function Home() {
           <span className="flex gap-2 items-center text-[11px] tracking-wide">
             <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-sans">Space</kbd> play
             <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-sans">←→</kbd> zap
+            <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-sans">?</kbd> help
             {current && <span className="rounded-lg border border-[var(--border)] px-2 py-1 truncate max-w-[160px]">♪ {current.name}</span>}
           </span>
         </div>

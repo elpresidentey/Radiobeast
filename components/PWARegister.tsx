@@ -21,9 +21,9 @@ export function PWARegister() {
     // check standalone
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as StandaloneNavigator).standalone;
     setIsStandalone(!!standalone);
-    // dismissed check (24h)
+    // dismissed check (7 days)
     const d = localStorage.getItem("radiobeast:pwa-dismissed");
-    if (d && Date.now() - parseInt(d, 10) < 24 * 60 * 60 * 1000) setDismissed(true);
+    if (d && Date.now() - parseInt(d, 10) < 7 * 24 * 60 * 60 * 1000) setDismissed(true);
     // iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     if (isIOS && !standalone) setShowIOSHint(true);

@@ -30,6 +30,17 @@ const HeartIcon = ({ filled }: { filled: boolean }) => (
   </svg>
 );
 
+function freshnessBadge(lastchecktime: string): { label: string; color: string } {
+  if (!lastchecktime) return { label: "Unknown", color: "text-white/50" };
+  const age = Date.now() - new Date(lastchecktime).getTime();
+  const mins = Math.floor(age / 60000);
+  if (mins < 60) return { label: `Checked ${mins}m ago`, color: "text-emerald-300" };
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return { label: `Checked ${hrs}h ago`, color: hrs < 6 ? "text-emerald-300" : "text-yellow-300" };
+  const days = Math.floor(hrs / 24);
+  return { label: `Checked ${days}d ago`, color: days < 7 ? "text-orange-300" : "text-red-300" };
+}
+
 export function StationCard({
   station,
   onPlay,
@@ -101,8 +112,9 @@ export function StationCard({
               </span>
             )}
           </div>
-          <p className="truncate text-xs text-[var(--muted-foreground)] mt-0.5">
+          <p className="truncate text-xs text-[var(--muted-foreground)] mt-0.5 flex items-center gap-1">
             {station.country || "Unknown"} • {station.language || tags[0] || "Music"} • {station.bitrate ? `${station.bitrate}k` : station.codec || "Live"}
+            {station.lastcheckok && (() => { const f = freshnessBadge(station.lastchecktime); return <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${f.color.replace("text-", "bg-")}`} title={f.label} />; })()}
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -143,8 +155,9 @@ export function StationCard({
             <span className={`h-1.5 w-1.5 rounded-full ${station.lastcheckok ? "bg-emerald-400 animate-pulse" : "bg-red-400"}`} />
             {station.lastcheckok ? "Live" : "Offline"}
           </span>
-          <span className="rounded-full bg-black/55 backdrop-blur-md border border-white/10 px-2.5 py-1 text-[11px] font-medium text-white/85">
+          <span className="rounded-full bg-black/55 backdrop-blur-md border border-white/10 px-2.5 py-1 text-[11px] font-medium text-white/85 flex items-center gap-1.5">
             {station.bitrate ? `${station.bitrate} kbps` : station.codec || "Live"}
+            {station.lastcheckok ? (() => { const f = freshnessBadge(station.lastchecktime); return <span className={`h-1 w-1 rounded-full ${f.color.replace("text-", "bg-")}`} title={f.label} />; })() : null}
           </span>
         </div>
 

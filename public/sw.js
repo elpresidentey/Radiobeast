@@ -1,7 +1,8 @@
-/* Radiobeast Service Worker — offline shell + API cache — v3 fixes stale chunk bug */
-const CACHE_NAME = "radiobeast-v3";
-const STATIC_CACHE = "radiobeast-static-v3";
-const API_CACHE = "radiobeast-api-v3";
+/* Radiobeast Service Worker — offline shell + API cache + offline fallback — v4 */
+const CACHE_NAME = "radiobeast-v4";
+const STATIC_CACHE = "radiobeast-static-v4";
+const API_CACHE = "radiobeast-api-v4";
+const OFFLINE_CACHE = "radiobeast-offline-v4";
 
 const APP_SHELL = [
   "/",
@@ -13,7 +14,7 @@ const APP_SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(APP_SHELL).catch(()=>{}))
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(APP_SHELL).catch(() => {}))
   );
   self.skipWaiting();
 });
@@ -23,10 +24,10 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => ![CACHE_NAME, STATIC_CACHE, API_CACHE].includes(k))
+          .filter((k) => ![CACHE_NAME, STATIC_CACHE, API_CACHE, OFFLINE_CACHE].includes(k))
           .map((k) => caches.delete(k))
       )
-    ).then(()=> self.clients.claim())
+    ).then(() => self.clients.claim())
   );
 });
 
@@ -36,6 +37,22 @@ self.addEventListener("fetch", (event) => {
 
   // never cache audio streams, proxy, or range requests
   if (req.headers.get("range") || url.pathname.startsWith("/api/stream") || url.pathname.match(/\.(mp3|aac|ogg|m3u8)$/i) || (url.hostname.includes("radio-browser") && req.url.includes("/json/url/"))) {
+    return;
+  }
+
+  // metadata endpoint — cache briefly to avoid hammering
+  if (url.pathname.startsWith("/api/metadata")) {
+    event.respondWith(
+      caches.open(API_CACHE).then((cache) =>
+        cache.match(req).then((cached) => {
+          const fetchPromise = fetch(req).then((res) => {
+            if (res.ok) cache.put(req, res.clone());
+            return res;
+          }).catch(() => cached);
+          return cached || fetchPromise;
+        })
+      )
+    );
     return;
   }
 
@@ -53,7 +70,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Next static chunks — network-first to avoid stale factory bug (framer-motion)
+  // Next static chunks — network-first to avoid stale factory bug
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
       fetch(req).then((res) => {
@@ -78,14 +95,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigation — network first
+  // Navigation — network first, offline fallback page
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req).then((res) => {
         const clone = res.clone();
         caches.open(CACHE_NAME).then((c) => c.put(req, clone));
+        // Also save an offline snapshot of the main page
+        if (url.pathname === "/") caches.open(OFFLINE_CACHE).then((c) => c.put(req, clone));
         return res;
-      }).catch(() => caches.match(req).then((c) => c || caches.match("/")))
+      }).catch(() =>
+        caches.match(req).then((c) => c || caches.match("/"))
+      )
     );
     return;
   }
@@ -102,6 +123,19 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+// Listen for offline saved stations from the app
 self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") self.skipWaiting();
+
+  if (event.data?.type === "CACHE_STATIONS") {
+    const stations = event.data.stations;
+    if (Array.isArray(stations)) {
+      caches.open(OFFLINE_CACHE).then((cache) => {
+        const payload = JSON.stringify({ stations, cachedAt: Date.now() });
+        const blob = new Blob([payload], { type: "application/json" });
+        const resp = new Response(blob);
+        cache.put(new Request("/api/offline-stations"), resp);
+      });
+    }
+  }
 });

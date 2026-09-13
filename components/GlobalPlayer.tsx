@@ -1,6 +1,7 @@
 "use client";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { useNowPlaying } from "@/hooks/useNowPlaying";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -37,6 +38,7 @@ export function GlobalPlayer() {
     sleepTimer, setSleepTimer, play, powerOff,
   } = usePlayerStore();
   const { error, loading, clearError } = useAudioPlayer();
+  const { title: nowPlayingTitle } = useNowPlaying();
   const [expanded, setExpanded] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const [sleepLeft, setSleepLeft] = useState<number | null>(null);
@@ -68,7 +70,7 @@ export function GlobalPlayer() {
 
   const isFav = favorites.includes(current.stationuuid);
   const mbPerHour = current.bitrate ? Math.round((current.bitrate * 3600) / 8 / 1024) : null;
-  const nowTitle = current.tags?.split(",")[0] || current.language || "Live broadcast";
+  const nowTitle = nowPlayingTitle || current.tags?.split(",")[0] || current.language || "Live broadcast";
   const queueIdx = queue.findIndex((s) => s.stationuuid === current.stationuuid);
 
   return (
@@ -117,7 +119,7 @@ export function GlobalPlayer() {
               )}
             </div>
             <div className="truncate text-[11px] sm:text-xs text-[var(--muted-foreground)] mt-0.5">
-              {flag(current.countrycode)} {current.country || "World"} • {current.bitrate ? `${current.bitrate} kbps` : current.codec || "Live"}{mbPerHour ? ` · ~${mbPerHour}MB/h` : ""}
+              {flag(current.countrycode)} {current.country || "World"} • {nowPlayingTitle && <span className="text-[var(--foreground)]/80 font-medium">{nowPlayingTitle} • </span>}{current.bitrate ? `${current.bitrate} kbps` : current.codec || "Live"}{mbPerHour ? ` · ~${mbPerHour}MB/h` : ""}
             </div>
           </button>
 
