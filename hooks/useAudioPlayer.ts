@@ -12,10 +12,9 @@ export function useAudioPlayer() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [playingOffline, setPlayingOffline] = useState(false);
-  // Track what fallback stage we're in to avoid infinite loops
   const fallbackRef = useRef(0);
+  const sourceChangingRef = useRef(false);
 
-  // create audio element once
   useEffect(() => {
     const a = new Audio();
     a.crossOrigin = null;
@@ -25,7 +24,9 @@ export function useAudioPlayer() {
     audioRef.current = a;
 
     const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
+    const onPause = () => {
+      if (!sourceChangingRef.current) setPlaying(false);
+    };
     const onWaiting = () => setLoading(true);
     const onCanPlay = () => setLoading(false);
     const onEnded = () => setPlaying(false);
@@ -36,7 +37,6 @@ export function useAudioPlayer() {
     a.addEventListener("canplay", onCanPlay);
     a.addEventListener("ended", onEnded);
 
-    // Media Session
     if ("mediaSession" in navigator) {
       try {
         navigator.mediaSession.setActionHandler("play", () => a.play().catch(() => {}));
@@ -58,13 +58,11 @@ export function useAudioPlayer() {
     };
   }, [setPlaying]);
 
-  // volume
   useEffect(() => {
     if (!audioRef.current) return;
     audioRef.current.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
 
-  // source change — handles all fallback logic internally
   useEffect(() => {
     if (!audioRef.current || !current) return;
     const a = audioRef.current;
@@ -72,25 +70,27 @@ export function useAudioPlayer() {
     setLoading(true);
     setPlayingOffline(false);
     fallbackRef.current = 0;
+    sourceChangingRef.current = true;
 
-    // cleanup previous hls
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
 
-    // If offline and station is saved, play from cache
+    const prevCleanup = (a as HTMLAudioElement & { _cleanupErr?: () => void })._cleanupErr;
+    if (prevCleanup) prevCleanup();
+
     if (!navigator.onLine && isStationSaved(current.stationuuid)) {
       getCachedAudioUrl(current.stationuuid).then((blobUrl) => {
         if (!blobUrl) {
           setError("Station not cached — connect to internet");
           setLoading(false);
           setPlaying(false);
+          sourceChangingRef.current = false;
           return;
         }
         a.src = blobUrl;
         setPlayingOffline(true);
-        a.play().catch((e) => {
-          const m = (e as Error)?.message || "";
-          if (m.includes("NotAllowedError")) setError("Tap Play to start audio");
-          else setError("Cached playback failed");
+        a.play().then(() => { sourceChangingRef.current = false; }).catch((e) => {
+          sourceChangingRef.current = false;
+          setError((e as Error)?.message?.includes("NotAllowedError") ? "Tap Play to start audio" : "Cached playback failed");
           setLoading(false);
         });
       });
@@ -102,29 +102,24 @@ export function useAudioPlayer() {
     const isHttpsPage = typeof location !== "undefined" && location.protocol === "https:";
     const isHttp = originalUrl.startsWith("http://");
 
-    // Build ordered list of URLs to try
-    const candidates: string[] = [];
-    if (isHttp && isHttpsPage) {
-      candidates.push(originalUrl.replace("http://", "https://")); // 1. try HTTPS upgrade
-      candidates.push(`/api/stream?url=${encodeURIComponent(originalUrl)}`); // 2. proxy
-    } else {
-      candidates.push(originalUrl); // just try the URL directly
-    }
+    const candidates: string[] = isHttp && isHttpsPage
+      ? [originalUrl.replace("http://", "https://"), `/api/stream?url=${encodeURIComponent(originalUrl)}`]
+      : [originalUrl];
+
+    const finishSourceChange = () => { sourceChangingRef.current = false; };
 
     function tryNextCandidate() {
       if (fallbackRef.current >= candidates.length) {
         setError("Stream unavailable — try another station");
         setLoading(false);
         setPlaying(false);
+        finishSourceChange();
         return;
       }
-      const url = candidates[fallbackRef.current];
-      fallbackRef.current++;
-      tryUrl(url);
+      tryUrl(candidates[fallbackRef.current++]);
     }
 
     function tryUrl(url: string) {
-      // only treat as HLS if URL is m3u8 or m3u
       const isHls = url.includes(".m3u8") || url.includes(".m3u");
 
       if (isHls && Hls.isSupported()) {
@@ -133,10 +128,9 @@ export function useAudioPlayer() {
         hls.loadSource(url);
         hls.attachMedia(a);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          a.play().catch((e) => {
-            const m = (e as Error)?.message || "";
-            if (m.includes("NotAllowedError")) setError("Tap Play to start audio");
-            else setError("Autoplay blocked — tap Play again");
+          a.play().then(finishSourceChange).catch((e) => {
+            finishSourceChange();
+            setError((e as Error)?.message?.includes("NotAllowedError") ? "Tap Play to start audio" : "Autoplay blocked — tap Play again");
             setLoading(false);
           });
         });
@@ -144,37 +138,19 @@ export function useAudioPlayer() {
           if (data.fatal) {
             hls.destroy();
             hlsRef.current = null;
-            // Try next candidate instead of retrying the same broken URL
             if (fallbackRef.current < candidates.length) {
-              setError(`Trying fallback...`);
+              setError("Trying fallback...");
               setTimeout(tryNextCandidate, 500);
             } else {
               setError("Stream unavailable — try another station");
               setLoading(false);
               setPlaying(false);
+              finishSourceChange();
             }
           }
         });
       } else {
-        // Direct audio (MP3/AAC/etc)
         a.src = url;
-        a.play().catch((e) => {
-          const msg = (e as Error)?.message || "";
-          if (msg.includes("NotAllowedError")) {
-            setError("Tap Play to start");
-            setLoading(false);
-            return;
-          }
-          // Try next candidate
-          if (fallbackRef.current < candidates.length) {
-            setTimeout(tryNextCandidate, 300);
-          } else {
-            setError("Stream unavailable — try another station");
-            setLoading(false);
-            setPlaying(false);
-          }
-        });
-        // Also listen for error event for network failures (not just play() rejection)
         const onError = () => {
           a.removeEventListener("error", onError);
           if (fallbackRef.current < candidates.length) {
@@ -183,24 +159,36 @@ export function useAudioPlayer() {
             setError("Stream unavailable — try another station");
             setLoading(false);
             setPlaying(false);
+            finishSourceChange();
           }
         };
         a.addEventListener("error", onError);
-        // Clean up error listener on next source change
-        const cleanup = () => { a.removeEventListener("error", onError); };
-        // Store cleanup for next effect run
-        const prevCleanup = (a as HTMLAudioElement & { _cleanupOffline?: () => void })._cleanupOffline;
-        if (prevCleanup) prevCleanup();
-        (a as HTMLAudioElement & { _cleanupOffline?: () => void })._cleanupOffline = cleanup;
+        (a as HTMLAudioElement & { _cleanupErr?: () => void })._cleanupErr = () => a.removeEventListener("error", onError);
+
+        a.play().then(finishSourceChange).catch((e) => {
+          a.removeEventListener("error", onError);
+          const msg = (e as Error)?.message || "";
+          if (msg.includes("NotAllowedError")) {
+            setError("Tap Play to start");
+            setLoading(false);
+            finishSourceChange();
+            return;
+          }
+          if (fallbackRef.current < candidates.length) {
+            setTimeout(tryNextCandidate, 300);
+          } else {
+            setError("Stream unavailable — try another station");
+            setLoading(false);
+            setPlaying(false);
+            finishSourceChange();
+          }
+        });
       }
     }
 
-    // Start trying candidates
     tryNextCandidate();
 
-    // click counting
     clickStation(current.stationuuid);
-    // media session metadata
     if ("mediaSession" in navigator) {
       try {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -213,10 +201,10 @@ export function useAudioPlayer() {
     }
   }, [current]);
 
-  // play/pause toggle
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !current) return;
+    if (sourceChangingRef.current) return;
     if (isPlaying) {
       if (a.paused) a.play().catch((e) => {
         setError(e?.message || "Playback failed");
@@ -227,7 +215,6 @@ export function useAudioPlayer() {
     }
   }, [isPlaying, current, setPlaying]);
 
-  // sleep timer check
   useEffect(() => {
     if (!sleepTimer) return;
     const checkTimer = setInterval(() => {
