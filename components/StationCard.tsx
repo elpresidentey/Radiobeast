@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Station, tagList } from "@/lib/radio";
 import { usePlayerStore } from "@/stores/playerStore";
@@ -17,6 +17,14 @@ function formatLastCheck(s: string) {
   }
 }
 
+function formatExpires(expiresAt: number, now: number) {
+  const remaining = expiresAt - now;
+  if (remaining <= 0) return "Expired";
+  const hrs = Math.floor(remaining / 3600000);
+  if (hrs >= 24) return `${Math.floor(hrs / 24)}d left`;
+  return `${hrs}h left`;
+}
+
 const PlayIcon = ({ playing }: { playing?: boolean }) =>
   playing ? (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z" /></svg>
@@ -29,6 +37,13 @@ const HeartIcon = ({ filled }: { filled: boolean }) => (
     <path d="M12 21s-6.5-4.2-9-8.6A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 8.9 7.4C18.5 16.8 12 21 12 21z" />
   </svg>
 );
+
+const DownloadIcon = ({ saved }: { saved: boolean }) =>
+  saved ? (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+  ) : (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+  );
 
 function freshnessBadge(lastchecktime: string): { label: string; color: string } {
   if (!lastchecktime) return { label: "Unknown", color: "text-white/50" };
@@ -50,11 +65,21 @@ export function StationCard({
   onPlay?: () => void;
   layout?: "grid" | "list";
 }) {
-  const { current, isPlaying, favorites, toggleFavorite, play, dataSaver } = usePlayerStore();
+  const { current, isPlaying, favorites, toggleFavorite, play, dataSaver, savedStations, saveStationForOffline, removeSavedStation } = usePlayerStore();
   const [showInfo, setShowInfo] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "done">("idle");
+  const [saving, setSaving] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const isCurrent = current?.stationuuid === station.stationuuid;
   const isFav = favorites.includes(station.stationuuid);
+  const savedMeta = savedStations.find((m) => m.uuid === station.stationuuid);
+  const isSaved = !!savedMeta;
+
+  useEffect(() => {
+    if (!isSaved) return;
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, [isSaved]);
   const tags = tagList(station.tags);
   const hasArt = !!station.favicon && !dataSaver;
   const estimatedHour = station.bitrate ? Math.round((station.bitrate * 3600) / 8 / 1024) : null;
@@ -62,6 +87,17 @@ export function StationCard({
   const doPlay = () => {
     play(station);
     onPlay?.();
+  };
+
+  const handleSave = async () => {
+    if (saving) return;
+    if (isSaved) {
+      await removeSavedStation(station.stationuuid);
+      return;
+    }
+    setSaving(true);
+    await saveStationForOffline(station);
+    setSaving(false);
   };
 
   const handleShare = async () => {
@@ -118,6 +154,9 @@ export function StationCard({
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          <button onClick={handleSave} disabled={saving} aria-label={isSaved ? "Remove from offline" : "Save for offline"} title={isSaved ? `Offline — ${formatExpires(savedMeta!.expiresAt, now)}` : "Save for offline"} className={`h-9 w-9 grid place-items-center rounded-xl border pressable ${isSaved ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}>
+            <DownloadIcon saved={isSaved} />
+          </button>
           <button onClick={() => toggleFavorite(station.stationuuid)} aria-label={isFav ? "Remove from favourites" : "Add to favourites"} aria-pressed={isFav} className={`h-9 w-9 grid place-items-center rounded-xl border pressable ${isFav ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "bg-[var(--muted)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}>
             <HeartIcon filled={isFav} />
           </button>
@@ -153,10 +192,18 @@ export function StationCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md border ${station.lastcheckok ? "bg-black/60 text-emerald-300 border-white/10" : "bg-black/60 text-red-300 border-white/10"}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${station.lastcheckok ? "bg-emerald-400 animate-pulse" : "bg-red-400"}`} />
-            {station.lastcheckok ? "Live" : "Offline"}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md border ${station.lastcheckok ? "bg-black/60 text-emerald-300 border-white/10" : "bg-black/60 text-red-300 border-white/10"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${station.lastcheckok ? "bg-emerald-400 animate-pulse" : "bg-red-400"}`} />
+              {station.lastcheckok ? "Live" : "Offline"}
+            </span>
+            {isSaved && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/60 text-emerald-300 border border-white/10 px-2 py-1 text-[11px] font-semibold backdrop-blur-md" title={formatExpires(savedMeta!.expiresAt, now)}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                {formatExpires(savedMeta!.expiresAt, now)}
+              </span>
+            )}
+          </div>
           <span className="rounded-full bg-black/55 backdrop-blur-md border border-white/10 px-2.5 py-1 text-[11px] font-medium text-white/85 flex items-center gap-1.5">
             {station.bitrate ? `${station.bitrate} kbps` : station.codec || "Live"}
             {station.lastcheckok ? (() => { const f = freshnessBadge(station.lastchecktime); return <span className={`h-1 w-1 rounded-full ${f.color.replace("text-", "bg-")}`} title={f.label} />; })() : null}
@@ -206,6 +253,9 @@ export function StationCard({
             ) : (
               <><PlayIcon /> Play</>
             )}
+          </button>
+          <button onClick={handleSave} disabled={saving} aria-label={isSaved ? "Remove from offline" : "Save for offline"} title={isSaved ? `Offline — ${formatExpires(savedMeta!.expiresAt, now)}` : "Save for offline"} className={`h-10 w-10 grid place-items-center rounded-xl pressable ${isSaved ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400" : "bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}>
+            <DownloadIcon saved={isSaved} />
           </button>
           <button aria-label={isFav ? "Remove from favourites" : "Add to favourites"} aria-pressed={isFav} onClick={() => toggleFavorite(station.stationuuid)} className={`h-10 w-10 grid place-items-center rounded-xl pressable ${isFav ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" : "bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}`}>
             <span className={isFav ? "animate-heart inline-flex" : "inline-flex"}><HeartIcon filled={isFav} /></span>

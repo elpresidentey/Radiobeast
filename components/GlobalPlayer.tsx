@@ -37,7 +37,7 @@ export function GlobalPlayer() {
     favorites, toggleFavorite, next, prev, queue, dataSaver,
     sleepTimer, setSleepTimer, play, powerOff,
   } = usePlayerStore();
-  const { error, loading, clearError } = useAudioPlayer();
+  const { error, loading, playingOffline, clearError } = useAudioPlayer();
   const { title: nowPlayingTitle } = useNowPlaying();
   const [expanded, setExpanded] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
@@ -79,6 +79,12 @@ export function GlobalPlayer() {
         <div className="flex items-center justify-between gap-2 bg-red-500/10 border-b border-red-500/20 px-4 py-2 text-sm text-red-400" role="alert">
           <span className="truncate text-xs sm:text-sm">{error}</span>
           <button onClick={clearError} className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 pressable">Dismiss</button>
+        </div>
+      )}
+      {playingOffline && (
+        <div className="flex items-center gap-2 bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-1.5 text-xs text-emerald-400 font-semibold">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Playing from offline cache
         </div>
       )}
       <div className="h-[3px] w-full bg-[var(--border)] overflow-hidden" aria-hidden="true">

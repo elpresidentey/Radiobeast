@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useTheme } from "@/components/ThemeProvider";
+import { getCacheSizeMB } from "@/lib/offlineCache";
 
 const SLEEP_OPTIONS = [5, 15, 30, 60, 90];
 
@@ -11,11 +12,20 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
     dataSaver, toggleDataSaver, preferSelfHost, togglePreferSelfHost,
     icecastFallback, toggleIcecastFallback, powerOff,
     sleepTimer, setSleepTimer, clearFavorites, clearRecent, favorites, recent,
+    savedStations, clearSavedStations,
   } = usePlayerStore();
   const { theme, toggle } = useTheme();
   const [canInstall, setCanInstall] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [exported, setExported] = useState(false);
+  const [cacheMB, setCacheMB] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!open) return;
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -27,6 +37,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
     const onInstalled = () => setCanInstall(false);
     window.addEventListener("pwa:installable", onInstallable);
     window.addEventListener("appinstalled", onInstalled);
+    getCacheSizeMB().then(setCacheMB);
     return () => {
       window.removeEventListener("pwa:installable", onInstallable);
       window.removeEventListener("appinstalled", onInstalled);
@@ -159,6 +170,33 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--muted)]/40 p-3 space-y-2 text-sm">
                   <div className="flex items-center justify-between"><span>{favorites.length} favourites</span><span className="flex gap-1.5"><button onClick={handleExport} className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-xs font-semibold pressable">{exported ? "Copied ✓" : "Export"}</button><button onClick={clearFavorites} className="rounded-lg border border-red-500/30 px-2.5 py-1 text-xs font-semibold text-red-400 pressable">Clear</button></span></div>
                   <div className="flex items-center justify-between"><span>{recent.length} recent</span><button onClick={clearRecent} className="rounded-lg border border-red-500/30 px-2.5 py-1 text-xs font-semibold text-red-400 pressable">Clear</button></div>
+                </div>
+              </section>
+
+              <section>
+                <div className="text-[11px] font-bold tracking-widest text-[var(--muted-foreground)] mb-2">OFFLINE</div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--muted)]/40 p-3 space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>{savedStations.length} saved station{savedStations.length !== 1 ? "s" : ""}</span>
+                    {cacheMB !== null && <span className="text-xs text-[var(--muted-foreground)]">{cacheMB} MB</span>}
+                  </div>
+                  {savedStations.length > 0 && (
+                    <div className="space-y-1.5 max-h-[120px] overflow-y-auto thin-scroll">
+                      {savedStations.map((s) => {
+                        const hrs = Math.max(0, Math.round((s.expiresAt - now) / 3600000));
+                        return (
+                          <div key={s.uuid} className="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
+                            <span className="truncate max-w-[180px]">{s.name}</span>
+                            <span className="text-emerald-400 shrink-0">{hrs >= 24 ? `${Math.floor(hrs / 24)}d` : `${hrs}h`}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {savedStations.length > 0 && (
+                    <button onClick={clearSavedStations} className="w-full rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 px-3 py-2 text-xs font-bold pressable">Clear all saved</button>
+                  )}
+                  <p className="text-[11px] text-[var(--muted-foreground)] leading-relaxed">Saved stations play offline for up to 24h. Tap the download icon on any station card to save it.</p>
                 </div>
               </section>
 

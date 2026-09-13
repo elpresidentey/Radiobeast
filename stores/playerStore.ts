@@ -1,6 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { Station } from "@/lib/radio";
+import { SavedStationMeta, getSavedStations, saveStation as cacheSave, removeStation as cacheRemove, clearAllSaved, cleanExpired } from "@/lib/offlineCache";
 
 type PlayerState = {
   current: Station | null;
@@ -15,6 +16,7 @@ type PlayerState = {
   compactMode: boolean;
   preferSelfHost: boolean;
   icecastFallback: boolean;
+  savedStations: SavedStationMeta[];
   // actions
   play: (s: Station) => void;
   toggle: () => void;
@@ -33,6 +35,10 @@ type PlayerState = {
   clearFavorites: () => void;
   clearRecent: () => void;
   powerOff: () => void;
+  saveStationForOffline: (s: Station, hours?: number) => Promise<boolean>;
+  removeSavedStation: (uuid: string) => Promise<void>;
+  clearSavedStations: () => Promise<void>;
+  refreshSavedStations: () => void;
 };
 
 const FAV_KEY = "radiobeast:favs";
@@ -77,6 +83,12 @@ function loadSleepTimer(): number | null {
   return parsed;
 }
 
+function loadSaved(): SavedStationMeta[] {
+  if (typeof window === "undefined") return [];
+  cleanExpired();
+  return getSavedStations();
+}
+
 export const usePlayerStore = create<PlayerState>((set, get) => ({
   current: null,
   queue: [],
@@ -90,6 +102,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   compactMode: false,
   preferSelfHost: typeof window !== "undefined" ? loadPreferSelfHost() : false,
   icecastFallback: typeof window !== "undefined" ? loadIcecastFallback() : false,
+  savedStations: typeof window !== "undefined" ? loadSaved() : [],
 
   play: (s) => {
     const { recent } = get();
@@ -170,6 +183,23 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       }
     }
   },
+  saveStationForOffline: async (s, hours) => {
+    const ok = await cacheSave(s, hours);
+    if (ok) set({ savedStations: loadSaved() });
+    return ok;
+  },
+  removeSavedStation: async (uuid) => {
+    await cacheRemove(uuid);
+    set({ savedStations: loadSaved() });
+  },
+  clearSavedStations: async () => {
+    await clearAllSaved();
+    set({ savedStations: [] });
+  },
+  refreshSavedStations: () => {
+    cleanExpired();
+    set({ savedStations: loadSaved() });
+  },
 }));
 
 // hydrate on client
@@ -182,6 +212,7 @@ if (typeof window !== "undefined") {
     const sleep = loadSleepTimer();
     const preferSelfHost = loadPreferSelfHost();
     const icecastFallback = loadIcecastFallback();
-    usePlayerStore.setState({ favorites: favs, recent, volume: vol, dataSaver: saver, sleepTimer: sleep, preferSelfHost, icecastFallback });
+    const savedStations = loadSaved();
+    usePlayerStore.setState({ favorites: favs, recent, volume: vol, dataSaver: saver, sleepTimer: sleep, preferSelfHost, icecastFallback, savedStations });
   }, 0);
 }

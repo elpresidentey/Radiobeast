@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { usePlayerStore } from "@/stores/playerStore";
 import { clickStation } from "@/lib/radio";
+import { getCachedAudioUrl, isStationSaved } from "@/lib/offlineCache";
 
 export function useAudioPlayer() {
   const { current, isPlaying, volume, isMuted, setPlaying, sleepTimer } = usePlayerStore();
@@ -10,6 +11,7 @@ export function useAudioPlayer() {
   const hlsRef = useRef<Hls | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [playingOffline, setPlayingOffline] = useState(false);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
 
@@ -93,10 +95,33 @@ export function useAudioPlayer() {
     const a = audioRef.current;
     setError(null);
     setLoading(true);
+    setPlayingOffline(false);
     retryCountRef.current = 0; // Reset retry count on source change
 
     // cleanup previous hls
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+
+    // If offline and station is saved, play from cache
+    if (!navigator.onLine && isStationSaved(current.stationuuid)) {
+      getCachedAudioUrl(current.stationuuid).then((blobUrl) => {
+        if (!blobUrl) {
+          setError("Station not cached — connect to internet");
+          setLoading(false);
+          setPlaying(false);
+          return;
+        }
+        a.src = blobUrl;
+        setPlayingOffline(true);
+        a.play().catch((e) => {
+          const m = (e as Error)?.message || "";
+          if (m.includes("NotAllowedError")) setError("Tap Play to start audio");
+          else setError("Cached playback failed");
+          setLoading(false);
+        });
+      });
+      clickStation(current.stationuuid);
+      return;
+    }
 
     let url = current.url_resolved || current.url;
     // fix: http on https page is blocked — try to upgrade or use proxy
@@ -216,5 +241,5 @@ export function useAudioPlayer() {
     return () => clearInterval(checkTimer);
   }, [sleepTimer, setPlaying]);
 
-  return { audioRef, error, loading, clearError: () => setError(null) };
+  return { audioRef, error, loading, playingOffline, clearError: () => setError(null) };
 }
