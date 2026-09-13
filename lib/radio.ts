@@ -91,35 +91,31 @@ async function fetchWithFallback(path: string, params: Record<string, string> = 
     servers = [SELF_HOST, ...PUBLIC_SERVERS];
   }
 
-  // Fire at all servers in parallel, use the first SUCCESSFUL response.
-  // (Promise.race would fail the whole call if the fastest server errors —
-  // e.g. one mirror with dead DNS rejects instantly while healthy ones lag.)
-  const promises = servers.map(server =>
-    fetch(`${server}/json${path}${suffix}`, {
-      signal: AbortSignal.timeout(12000),
-      // NOTE: browsers strip User-Agent (forbidden header) — harmless here;
-      // the header only takes effect in server/proxy contexts.
-      next: { revalidate: 300 },
-    })
-    .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status} from ${server}`);
-      baseUrl = server; // Update baseUrl to the server that responded
-      return res.json();
-    })
-  );
-
-  try {
-    const data = await Promise.any(promises);
-    // Cache the successful response (unless bypassed)
-    if (!opts.bypassCache) {
-      const key = getCacheKey(path, params, opts);
-      setInCache(key, data);
+  // Try each server in order with a short timeout per server.
+  // Sequential is more reliable than parallel in flaky networks —
+  // parallel fires all requests simultaneously which can overwhelm
+  // the connection on mobile/slow networks.
+  let lastErr: unknown = null;
+  for (const server of servers) {
+    try {
+      const res = await fetch(`${server}/json${path}${suffix}`, {
+        signal: AbortSignal.timeout(10000),
+        next: { revalidate: 300 },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      baseUrl = server;
+      if (!opts.bypassCache) {
+        const key = getCacheKey(path, params, opts);
+        setInCache(key, data);
+      }
+      return data;
+    } catch (err) {
+      lastErr = err;
+      // continue to next server
     }
-    return data;
-  } catch {
-    // Promise.any rejects with AggregateError when EVERY server failed
-    throw new Error("All radio servers unreachable — check your connection (or ad-blocker/DNS) and retry.");
   }
+  throw lastErr instanceof Error ? lastErr : new Error("All radio servers unreachable — check your connection and retry.");
 }
 
 // Helpers to build search params
@@ -149,16 +145,36 @@ export function buildSearchParams(opts: {
   return p;
 }
 
+// Filter out stale / broken stations client-side.
+// The API's hidebroken flag only catches stations that failed their LAST check.
+// A station can pass the last check but still be dead (check was days/weeks ago).
+function filterStations(stations: Station[]): Station[] {
+  const now = Date.now();
+  const MAX_AGE_MS = 21 * 24 * 60 * 60 * 1000; // 21 days
+  return stations.filter((s) => {
+    if (s.lastcheckok === 0) return false;
+    if (s.lastchecktime) {
+      const age = now - new Date(s.lastchecktime).getTime();
+      if (age > MAX_AGE_MS) return false;
+    }
+    if (s.url_resolved && s.url_resolved.startsWith("http://") && s.ssl_error) return false;
+    return true;
+  });
+}
+
 export async function getStations(opts: Parameters<typeof buildSearchParams>[0] = {}, fetchOpts: FetchOpts = {}): Promise<Station[]> {
   const params = buildSearchParams({ limit: 48, order: "clickcount", reverse: true, ...opts });
-  return fetchWithFallback("/stations/search", params, fetchOpts);
+  const data: Station[] = await fetchWithFallback("/stations/search", params, fetchOpts);
+  return filterStations(data);
 }
 
 export async function getTopStations(limit = 48, fetchOpts: FetchOpts = {}): Promise<Station[]> {
-  return fetchWithFallback("/stations/topclick", { limit: String(limit), hidebroken: "true" }, fetchOpts);
+  const data: Station[] = await fetchWithFallback("/stations/topclick", { limit: String(limit), hidebroken: "true" }, fetchOpts);
+  return filterStations(data);
 }
 export async function getTopVoted(limit = 48, fetchOpts: FetchOpts = {}): Promise<Station[]> {
-  return fetchWithFallback("/stations/topvote", { limit: String(limit), hidebroken: "true" }, fetchOpts);
+  const data: Station[] = await fetchWithFallback("/stations/topvote", { limit: String(limit), hidebroken: "true" }, fetchOpts);
+  return filterStations(data);
 }
 export async function getCountries(fetchOpts: FetchOpts = {}): Promise<Country[]> {
   const data: Country[] = await fetchWithFallback("/countries", { hidebroken: "true" }, fetchOpts);

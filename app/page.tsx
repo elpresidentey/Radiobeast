@@ -118,62 +118,70 @@ export default function Home() {
 
   const orderFor = useCallback((s: Sort) => (s === "votes" ? "votes" : s === "name" ? "name" : "clickcount"), []);
 
-  const fetchStations = useCallback(async (reset = true) => {
+  const fetchStationsImpl = useCallback(async (reset = true) => {
     if (reset) { setLoading(true); } else { setLoadingMore(true); }
     setError(null);
-    try {
-      const off = reset ? 0 : offsetRef.current;
-      let data: Station[] = [];
-      const fetchOpts = { preferSelfHost };
-      const base = {
-        name: activeSearch || undefined,
-        countrycode: country || undefined,
-        language: language || undefined,
-        tag: tag || undefined,
-        limit, offset: off,
-        order: activeSearch || country || tag || language ? orderFor(sort) : sort === "name" ? "name" : sort === "votes" ? "votes" : "clickcount",
-        reverse: sort !== "name",
-      };
-      if (activeSearch || country || tag || language) {
-        data = await getStationsWithIcecastFallback(base, fetchOpts, icecastFallback);
-      } else if (tab === "trending") {
-        const top = await getTopStations(limit + off, fetchOpts);
-        data = top.slice(off, off + limit);
-        if (icecastFallback && data.length < 6) {
-          const { getIcecastStations } = await import("@/lib/radio");
-          const extra = await getIcecastStations({ limit });
-          const seen = new Set(data.map((s) => s.stationuuid));
-          data = [...data, ...extra.filter((s) => !seen.has(s.stationuuid))].slice(0, limit);
+    const maxAttempts = 2;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const off = reset ? 0 : offsetRef.current;
+        let data: Station[] = [];
+        const fetchOpts = { preferSelfHost };
+        const base = {
+          name: activeSearch || undefined,
+          countrycode: country || undefined,
+          language: language || undefined,
+          tag: tag || undefined,
+          limit, offset: off,
+          order: activeSearch || country || tag || language ? orderFor(sort) : sort === "name" ? "name" : sort === "votes" ? "votes" : "clickcount",
+          reverse: sort !== "name",
+        };
+        if (activeSearch || country || tag || language) {
+          data = await getStationsWithIcecastFallback(base, fetchOpts, icecastFallback);
+        } else if (tab === "trending") {
+          const top = await getTopStations(limit + off, fetchOpts);
+          data = top.slice(off, off + limit);
+          if (icecastFallback && data.length < 6) {
+            const { getIcecastStations } = await import("@/lib/radio");
+            const extra = await getIcecastStations({ limit });
+            const seen = new Set(data.map((s) => s.stationuuid));
+            data = [...data, ...extra.filter((s) => !seen.has(s.stationuuid))].slice(0, limit);
+          }
+        } else if (tab === "top") {
+          const top = await getTopVoted(limit + off, fetchOpts);
+          data = top.slice(off, off + limit);
         }
-      } else if (tab === "top") {
-        const top = await getTopVoted(limit + off, fetchOpts);
-        data = top.slice(off, off + limit);
-      }
-      if (dataSaver) data = data.filter((s) => !s.bitrate || s.bitrate <= 128).slice(0, limit);
-      if (sort === "name") data = [...data].sort((a, b) => a.name.localeCompare(b.name));
+        if (dataSaver) data = data.filter((s) => !s.bitrate || s.bitrate <= 128).slice(0, limit);
+        if (sort === "name") data = [...data].sort((a, b) => a.name.localeCompare(b.name));
 
-      if (reset) {
-        setStations(data);
-        offsetRef.current = limit;
-        if (data.length) setQueue(data);
-      } else {
-        setStations((p) => {
-          const seen = new Set(p.map((s) => s.stationuuid));
-          const merged = [...p, ...data.filter((s) => !seen.has(s.stationuuid))];
-          setQueue(merged);
-          return merged;
-        });
-        offsetRef.current = off + limit;
+        if (reset) {
+          setStations(data);
+          offsetRef.current = limit;
+          if (data.length) setQueue(data);
+        } else {
+          setStations((p) => {
+            const seen = new Set(p.map((s) => s.stationuuid));
+            const merged = [...p, ...data.filter((s) => !seen.has(s.stationuuid))];
+            setQueue(merged);
+            return merged;
+          });
+          offsetRef.current = off + limit;
+        }
+        setHasMore(data.length >= Math.min(limit, 12));
+        return;
+      } catch (e: unknown) {
+        if (attempt < maxAttempts - 1) {
+          await new Promise((r) => setTimeout(r, 1500));
+          continue;
+        }
+        setError(e instanceof Error ? e.message : "Failed to load stations. Check your connection and retry.");
       }
-      setHasMore(data.length >= Math.min(limit, 12));
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load stations. Check your connection and retry.");
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
     }
+    setLoading(false);
+    setLoadingMore(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, activeSearch, country, language, tag, sort, limit, dataSaver, preferSelfHost, icecastFallback]);
+  const fetchStations = useCallback((reset = true) => fetchStationsImpl(reset), [fetchStationsImpl]);
 
   // reset on filter change
   useEffect(() => {
