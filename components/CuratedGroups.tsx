@@ -1,24 +1,74 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Station, getStations } from "@/lib/radio";
+import { Station, getStations, FetchOpts } from "@/lib/radio";
 import { usePlayerStore } from "@/stores/playerStore";
 
 type CuratedGroup = {
   id: string;
   label: string;
-  tag: string;
   emoji: string;
   color: string;
+  fetch: (opts: FetchOpts) => Promise<Station[]>;
 };
 
 const GROUPS: CuratedGroup[] = [
-  { id: "afrobeat", label: "Afrobeat Live", tag: "afrobeat", emoji: "🥁", color: "#f59e0b" },
-  { id: "classical", label: "Classical", tag: "classical", emoji: "🎻", color: "#8b5cf6" },
-  { id: "jazz", label: "Jazz & Blues", tag: "jazz", emoji: "🎷", color: "#3b82f6" },
-  { id: "electronic", label: "Electronic", tag: "electronic", emoji: "🎛", color: "#06b6d4" },
-  { id: "hiphop", label: "Hip-Hop", tag: "hip hop", emoji: "🎤", color: "#ef4444" },
-  { id: "news", label: "News Radio", tag: "news", emoji: "📰", color: "#10b981" },
+  {
+    id: "afrobeat",
+    label: "Afrobeats & Afro-Fusion",
+    emoji: "🥁",
+    color: "#f59e0b",
+    fetch: async (opts) => {
+      const [ng, gh] = await Promise.all([
+        getStations({ countrycode: "NG", limit: 8, order: "clickcount", reverse: true, tag: "afrobeats" }, opts),
+        getStations({ countrycode: "GH", limit: 4, order: "clickcount", reverse: true, tag: "afrobeats" }, opts),
+      ]);
+      const seen = new Set<string>();
+      return [...ng, ...gh].filter((s) => { if (seen.has(s.stationuuid)) return false; seen.add(s.stationuuid); return true; }).slice(0, 8);
+    },
+  },
+  {
+    id: "classical",
+    label: "Classical",
+    emoji: "🎻",
+    color: "#8b5cf6",
+    fetch: (opts) => getStations({ tag: "classical", limit: 8, order: "clickcount", reverse: true }, opts),
+  },
+  {
+    id: "jazz",
+    label: "Jazz & Blues",
+    emoji: "🎷",
+    color: "#3b82f6",
+    fetch: (opts) => getStations({ tag: "jazz", limit: 8, order: "clickcount", reverse: true }, opts),
+  },
+  {
+    id: "electronic",
+    label: "Electronic & Dance",
+    emoji: "🎛",
+    color: "#06b6d4",
+    fetch: (opts) => getStations({ tag: "electronic", limit: 8, order: "clickcount", reverse: true }, opts),
+  },
+  {
+    id: "hiphop",
+    label: "Hip-Hop & R&B",
+    emoji: "🎤",
+    color: "#ef4444",
+    fetch: async (opts) => {
+      const [hh, rb] = await Promise.all([
+        getStations({ tag: "hip hop", limit: 6, order: "clickcount", reverse: true }, opts),
+        getStations({ tag: "r&b", limit: 3, order: "clickcount", reverse: true }, opts),
+      ]);
+      const seen = new Set<string>();
+      return [...hh, ...rb].filter((s) => { if (seen.has(s.stationuuid)) return false; seen.add(s.stationuuid); return true; }).slice(0, 8);
+    },
+  },
+  {
+    id: "news",
+    label: "News & Talk",
+    emoji: "📰",
+    color: "#10b981",
+    fetch: (opts) => getStations({ tag: "news", limit: 8, order: "clickcount", reverse: true }, opts),
+  },
 ];
 
 function flag(code: string) {
@@ -63,12 +113,9 @@ export function CuratedGroups() {
 
   useEffect(() => {
     let cancelled = false;
+    const opts = { preferSelfHost };
     async function load() {
-      const results = await Promise.allSettled(
-        GROUPS.map((g) =>
-          getStations({ tag: g.tag, limit: 6, order: "clickcount", reverse: true, hidebroken: true }, { preferSelfHost })
-        )
-      );
+      const results = await Promise.allSettled(GROUPS.map((g) => g.fetch(opts)));
       if (cancelled) return;
       const map = new Map<string, Station[]>();
       results.forEach((r, i) => {
@@ -85,7 +132,7 @@ export function CuratedGroups() {
 
   return (
     <section className="space-y-7" aria-label="Curated genre groups">
-      {GROUPS.filter((g) => groups.get(g.id)?.length).map((group, gi) => {
+      {GROUPS.filter((g) => groups.get(g.id)?.length).map((group) => {
         const stations = groups.get(group.id) || [];
         return (
           <div key={group.id}>
@@ -100,7 +147,7 @@ export function CuratedGroups() {
                   key={s.stationuuid}
                   initial={{ opacity: 0, x: 12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: gi * 0.05 + i * 0.03 }}
+                  transition={{ delay: i * 0.03 }}
                 >
                   <GroupCard station={s} onPlay={() => { setQueue(stations); play(s); }} />
                 </motion.div>
