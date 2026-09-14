@@ -44,12 +44,40 @@ export async function saveStation(
   try {
     // Fetch the stream via the proxy to avoid CORS
     const proxyUrl = `/api/stream?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(30000) });
-    if (!res.ok) return false;
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok || !res.body) return false;
+
+    // Radio streams are infinite — we can't cache the whole thing.
+    // Buffer ~30 seconds of audio (enough for a short offline listen)
+    // then abort the rest. At 128kbps that's ~480KB, at 320kbps ~1.2MB.
+    const targetBytes = 1_500_000; // ~1.5MB cap
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+
+    while (totalBytes < targetBytes) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      totalBytes += value.length;
+    }
+    reader.cancel().catch(() => {});
+
+    if (totalBytes === 0) return false;
+
+    // Build a finite Response from the buffered chunks
+    const blob = new Blob(chunks as BlobPart[]);
+    const finiteResponse = new Response(blob, {
+      status: 200,
+      headers: {
+        "content-type": res.headers.get("content-type") || "audio/mpeg",
+        "content-length": String(totalBytes),
+      },
+    });
 
     const cache = await caches.open(AUDIO_CACHE);
     const cacheKey = new Request(`/audio/${station.stationuuid}`);
-    await cache.put(cacheKey, res.clone());
+    await cache.put(cacheKey, finiteResponse);
 
     // Track size and evict if over limit
     await evictIfNeeded(cache);
