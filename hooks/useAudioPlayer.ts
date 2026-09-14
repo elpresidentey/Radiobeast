@@ -14,7 +14,11 @@ export function useAudioPlayer() {
   const [playingOffline, setPlayingOffline] = useState(false);
   const fallbackRef = useRef(0);
   const sourceChangingRef = useRef(false);
+  // Bump on every source change so stale async callbacks from a previous
+  // station don't write state into the current one.
+  const generationRef = useRef(0);
 
+  // create audio element once
   useEffect(() => {
     const a = new Audio();
     a.crossOrigin = null;
@@ -23,7 +27,9 @@ export function useAudioPlayer() {
     a.playsInline = true;
     audioRef.current = a;
 
-    const onPlay = () => setPlaying(true);
+    const onPlay = () => {
+      if (!sourceChangingRef.current) setPlaying(true);
+    };
     const onPause = () => {
       if (!sourceChangingRef.current) setPlaying(false);
     };
@@ -58,40 +64,57 @@ export function useAudioPlayer() {
     };
   }, [setPlaying]);
 
+  // volume
   useEffect(() => {
     if (!audioRef.current) return;
     audioRef.current.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
 
+  // source change
   useEffect(() => {
     if (!audioRef.current || !current) return;
     const a = audioRef.current;
+    const gen = ++generationRef.current;
+
     setError(null);
     setLoading(true);
     setPlayingOffline(false);
     fallbackRef.current = 0;
     sourceChangingRef.current = true;
 
+    // Stop previous stream cleanly before switching
+    a.pause();
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
 
     const prevCleanup = (a as HTMLAudioElement & { _cleanupErr?: () => void })._cleanupErr;
     if (prevCleanup) prevCleanup();
 
+    // Helper: bail out if a newer source change has started
+    const alive = () => gen === generationRef.current;
+
+    const finish = () => {
+      if (!alive()) return;
+      sourceChangingRef.current = false;
+    };
+
+    // Offline cached playback
     if (!navigator.onLine && isStationSaved(current.stationuuid)) {
       getCachedAudioUrl(current.stationuuid).then((blobUrl) => {
+        if (!alive()) return;
         if (!blobUrl) {
           setError("Station not cached — connect to internet");
           setLoading(false);
           setPlaying(false);
-          sourceChangingRef.current = false;
+          finish();
           return;
         }
         a.src = blobUrl;
         setPlayingOffline(true);
-        a.play().then(() => { sourceChangingRef.current = false; }).catch((e) => {
-          sourceChangingRef.current = false;
+        a.play().then(finish).catch((e) => {
+          if (!alive()) return;
           setError((e as Error)?.message?.includes("NotAllowedError") ? "Tap Play to start audio" : "Cached playback failed");
           setLoading(false);
+          finish();
         });
       });
       clickStation(current.stationuuid);
@@ -106,20 +129,20 @@ export function useAudioPlayer() {
       ? [originalUrl.replace("http://", "https://"), `/api/stream?url=${encodeURIComponent(originalUrl)}`]
       : [originalUrl];
 
-    const finishSourceChange = () => { sourceChangingRef.current = false; };
-
     function tryNextCandidate() {
+      if (!alive()) return;
       if (fallbackRef.current >= candidates.length) {
         setError("Stream unavailable — try another station");
         setLoading(false);
         setPlaying(false);
-        finishSourceChange();
+        finish();
         return;
       }
       tryUrl(candidates[fallbackRef.current++]);
     }
 
     function tryUrl(url: string) {
+      if (!alive()) return;
       const isHls = url.includes(".m3u8") || url.includes(".m3u");
 
       if (isHls && Hls.isSupported()) {
@@ -128,50 +151,58 @@ export function useAudioPlayer() {
         hls.loadSource(url);
         hls.attachMedia(a);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          a.play().then(finishSourceChange).catch((e) => {
-            finishSourceChange();
+          if (!alive()) return;
+          a.play().then(finish).catch((e) => {
+            if (!alive()) return;
             setError((e as Error)?.message?.includes("NotAllowedError") ? "Tap Play to start audio" : "Autoplay blocked — tap Play again");
             setLoading(false);
+            finish();
           });
         });
         hls.on(Hls.Events.ERROR, (_evt, data) => {
-          if (data.fatal) {
-            hls.destroy();
-            hlsRef.current = null;
-            if (fallbackRef.current < candidates.length) {
-              setError("Trying fallback...");
-              setTimeout(tryNextCandidate, 500);
-            } else {
-              setError("Stream unavailable — try another station");
-              setLoading(false);
-              setPlaying(false);
-              finishSourceChange();
-            }
+          if (!alive() || !data.fatal) return;
+          hls.destroy();
+          hlsRef.current = null;
+          if (fallbackRef.current < candidates.length) {
+            setError("Trying fallback...");
+            setTimeout(tryNextCandidate, 500);
+          } else {
+            setError("Stream unavailable — try another station");
+            setLoading(false);
+            setPlaying(false);
+            finish();
           }
         });
       } else {
         a.src = url;
         const onError = () => {
           a.removeEventListener("error", onError);
+          if (!alive()) return;
           if (fallbackRef.current < candidates.length) {
             setTimeout(tryNextCandidate, 300);
           } else {
             setError("Stream unavailable — try another station");
             setLoading(false);
             setPlaying(false);
-            finishSourceChange();
+            finish();
           }
         };
         a.addEventListener("error", onError);
         (a as HTMLAudioElement & { _cleanupErr?: () => void })._cleanupErr = () => a.removeEventListener("error", onError);
 
-        a.play().then(finishSourceChange).catch((e) => {
+        a.play().then(finish).catch((e) => {
           a.removeEventListener("error", onError);
+          if (!alive()) return;
           const msg = (e as Error)?.message || "";
+          // AbortError = interrupted by source change — not a real error
+          if (msg.includes("AbortError") || msg.includes("interrupted")) {
+            finish();
+            return;
+          }
           if (msg.includes("NotAllowedError")) {
             setError("Tap Play to start");
             setLoading(false);
-            finishSourceChange();
+            finish();
             return;
           }
           if (fallbackRef.current < candidates.length) {
@@ -180,7 +211,7 @@ export function useAudioPlayer() {
             setError("Stream unavailable — try another station");
             setLoading(false);
             setPlaying(false);
-            finishSourceChange();
+            finish();
           }
         });
       }
@@ -199,15 +230,19 @@ export function useAudioPlayer() {
         });
       } catch {}
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
 
+  // play/pause toggle — only for user-initiated actions, NOT during source changes
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !current) return;
     if (sourceChangingRef.current) return;
     if (isPlaying) {
       if (a.paused) a.play().catch((e) => {
-        setError(e?.message || "Playback failed");
+        const msg = (e as Error)?.message || "";
+        if (msg.includes("AbortError") || msg.includes("interrupted")) return;
+        setError(msg || "Playback failed");
         setPlaying(false);
       });
     } else {
@@ -215,6 +250,7 @@ export function useAudioPlayer() {
     }
   }, [isPlaying, current, setPlaying]);
 
+  // sleep timer check
   useEffect(() => {
     if (!sleepTimer) return;
     const checkTimer = setInterval(() => {
