@@ -276,7 +276,7 @@ export default function Home() {
           </div>
           <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]">
             Radio.<br className="sm:hidden" />{" "}
-            <span className="text-gradient">Everywhere.</span>
+            Everywhere.
           </h1>
           <p className="mt-4 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]">
             45,000 live stations. Any country, any genre. Just press play.

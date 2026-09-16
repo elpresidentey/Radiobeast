@@ -178,14 +178,6 @@ header.liquid-strong { border-top: none; border-bottom: 1px solid var(--border);
 }
 .card-lift:active { transform: translateY(-1px) scale(.995); }
 
-/* gradient accent word */
-.text-gradient {
-  background-image: linear-gradient(100deg, var(--accent), #fb923c 55%, var(--accent-hover));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 /* ambient hero glow */
 .hero-glow {
   position: absolute;
