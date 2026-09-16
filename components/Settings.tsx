@@ -76,7 +76,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
     <AnimatePresence>
       {open && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[70] bg-[var(--overlay)] backdrop-blur-sm" />
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -88,7 +88,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
           >
             <div className="min-h-[60px] flex items-center justify-between px-4 border-b border-[var(--border)] shrink-0">
               <span className="text-sm font-bold tracking-tight">Settings</span>
-              <button onClick={onClose} aria-label="Close settings" className="h-8 w-8 grid place-items-center rounded-full bg-[var(--muted)] border border-[var(--border)] text-lg leading-none pressable">×</button>
+              <button onClick={onClose} aria-label="Close settings" className="h-8 w-8 grid place-items-center rounded-full bg-[var(--muted)] border border-[var(--border)] text-lg leading-none hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)] transition-colors pressable">×</button>
             </div>
 
             <div className="flex-1 overflow-y-auto thin-scroll p-4 space-y-6">

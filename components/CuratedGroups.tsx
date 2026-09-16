@@ -83,10 +83,10 @@ function GroupCard({ station, onPlay }: { station: Station; onPlay: () => void }
   return (
     <button
       onClick={onPlay}
-      className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-all shrink-0 w-[230px] sm:w-[270px] pressable ${
+      className={`card-lift flex items-center gap-3 rounded-2xl border p-3 text-left shrink-0 w-[230px] sm:w-[270px] pressable ${
         isCurrent
-          ? "border-[var(--accent)]/40 bg-[var(--accent)]/5 shadow-md shadow-[var(--accent)]/5"
-          : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)] hover:shadow-md hover:shadow-black/5"
+          ? "border-[var(--accent)]/45 bg-[var(--accent)]/5 shadow-md shadow-[var(--accent)]/10"
+          : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)]"
       }`}
     >
       <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-[var(--muted)] border border-[var(--border)]">

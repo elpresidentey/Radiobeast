@@ -49,11 +49,11 @@ function freshnessBadge(lastchecktime: string): { label: string; color: string }
   if (!lastchecktime) return { label: "Unknown", color: "text-white/50" };
   const age = Date.now() - new Date(lastchecktime).getTime();
   const mins = Math.floor(age / 60000);
-  if (mins < 60) return { label: `Checked ${mins}m ago`, color: "text-emerald-300" };
+  if (mins < 60) return { label: `Checked ${mins}m ago`, color: "text-emerald-500" };
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return { label: `Checked ${hrs}h ago`, color: hrs < 6 ? "text-emerald-300" : "text-yellow-300" };
+  if (hrs < 24) return { label: `Checked ${hrs}h ago`, color: hrs < 6 ? "text-emerald-500" : "text-amber-500" };
   const days = Math.floor(hrs / 24);
-  return { label: `Checked ${days}d ago`, color: days < 7 ? "text-orange-300" : "text-red-300" };
+  return { label: `Checked ${days}d ago`, color: days < 7 ? "text-orange-500" : "text-red-500" };
 }
 
 export function StationCard({
@@ -122,7 +122,7 @@ export function StationCard({
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className={`group flex items-center gap-3 rounded-2xl border p-2.5 pr-3 transition-colors ${
+        className={`group card-lift flex items-center gap-3 rounded-2xl border p-2.5 pr-3 ${
           isCurrent ? "border-[var(--accent)]/50 bg-[var(--card)]" : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)]"
         }`}
       >
@@ -173,10 +173,10 @@ export function StationCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border text-left transition-all duration-200 ${
+      className={`group card-lift relative flex flex-col overflow-hidden rounded-2xl border text-left ${
         isCurrent
-          ? "border-[var(--accent)]/40 bg-[var(--card)] shadow-lg shadow-[var(--accent)]/5"
-          : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)] hover:shadow-md hover:shadow-black/10"
+          ? "border-[var(--accent)]/45 bg-[var(--card)] shadow-lg shadow-[var(--accent)]/10"
+          : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)]"
       }`}
     >
       {/* art header — taller for visual impact */}

@@ -37,7 +37,7 @@ export function KeyboardShortcuts() {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[80] bg-[var(--overlay)] backdrop-blur-sm"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -53,7 +53,7 @@ export function KeyboardShortcuts() {
                 <h2 className="text-[15px] font-bold">Keyboard Shortcuts</h2>
                 <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5">Navigate like a power user</p>
               </div>
-              <button onClick={() => setOpen(false)} aria-label="Close" className="h-8 w-8 grid place-items-center rounded-full bg-[var(--muted)] border border-[var(--border)] text-sm leading-none pressable">×</button>
+              <button onClick={() => setOpen(false)} aria-label="Close" className="h-8 w-8 grid place-items-center rounded-full bg-[var(--muted)] border border-[var(--border)] text-sm leading-none hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)] transition-colors pressable">×</button>
             </div>
             <div className="space-y-1">
               {SHORTCUTS.map((s) => (

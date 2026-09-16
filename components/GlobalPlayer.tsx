@@ -74,7 +74,7 @@ export function GlobalPlayer() {
   const queueIdx = queue.findIndex((s) => s.stationuuid === current.stationuuid);
 
   return (
-    <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed inset-x-0 bottom-0 z-50 liquid-strong safe-bottom shadow-[0_-8px_40px_rgba(0,0,0,0.35)]">
+    <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed inset-x-0 bottom-0 z-50 liquid-strong safe-bottom shadow-[0_-12px_40px_-16px_rgba(0,0,0,0.5)]">
       {error && (
         <div className="flex items-center justify-between gap-2 bg-red-500/10 border-b border-red-500/20 px-4 py-2 text-sm text-red-400" role="alert">
           <span className="truncate text-xs sm:text-sm">{error}</span>
@@ -91,12 +91,13 @@ export function GlobalPlayer() {
         <div
           className="h-full"
           style={{
-            width: isPlaying ? "100%" : "30%",
+            width: "100%",
+            opacity: isPlaying ? 1 : 0.3,
             backgroundSize: "200% 100%",
             backgroundImage: isPlaying ? "linear-gradient(90deg, var(--accent), #fb923c, var(--accent))" : undefined,
             backgroundColor: isPlaying ? undefined : "var(--border-hover)",
             animation: isPlaying ? "shimmer 1.6s linear infinite" : undefined,
-            transition: "width .4s cubic-bezier(.16,1,.3,1)",
+            transition: "opacity .35s ease, width .4s cubic-bezier(.16,1,.3,1)",
             boxShadow: isPlaying ? "0 0 12px var(--accent)" : undefined,
           }}
         />
@@ -105,7 +106,7 @@ export function GlobalPlayer() {
       <div className="mx-auto max-w-6xl px-3 sm:px-4">
         <div className="flex items-center gap-2.5 sm:gap-3 py-2.5">
           {/* art */}
-          <div className={`relative h-11 w-11 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--muted)] border border-[var(--border)] ${isPlaying ? "shadow-md shadow-[var(--accent)]/10" : ""}`}>
+          <div className={`relative h-11 w-11 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--muted)] border transition-colors ${isPlaying ? "border-[var(--accent)]/40 shadow-md shadow-[var(--accent)]/15" : "border-[var(--border)]"}`}>
             {current.favicon && !dataSaver ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={current.favicon} alt="" loading="lazy" className="h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
@@ -237,7 +238,7 @@ export function GlobalPlayer() {
       <AnimatePresence>
         {queueOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQueueOpen(false)} className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQueueOpen(false)} className="fixed inset-0 z-[60] bg-[var(--overlay)] backdrop-blur-sm" />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
@@ -252,7 +253,7 @@ export function GlobalPlayer() {
                   <div className="text-sm font-bold">Up next</div>
                   <div className="text-[11px] text-[var(--muted-foreground)]">{queue.length} stations{queueIdx >= 0 ? ` • #${queueIdx + 1} playing` : ""}</div>
                 </div>
-                <button onClick={() => setQueueOpen(false)} aria-label="Close queue" className="h-8 w-8 grid place-items-center rounded-full bg-[var(--muted)] border border-[var(--border)] text-lg leading-none pressable">×</button>
+                <button onClick={() => setQueueOpen(false)} aria-label="Close queue" className="h-8 w-8 grid place-items-center rounded-full bg-[var(--muted)] border border-[var(--border)] text-lg leading-none hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)] transition-colors pressable">×</button>
               </div>
               <div className="overflow-y-auto thin-scroll p-2">
                 {queue.map((s, i) => (

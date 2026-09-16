@@ -115,7 +115,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
         placeholder="Search stations, genres, countries…"
         aria-label="Search stations"
         role="searchbox"
-        className="h-11 w-full rounded-xl bg-[var(--muted)] border border-[var(--border)] pl-10 pr-24 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
+        className="h-11 w-full rounded-xl bg-[var(--muted)] border border-[var(--border)] hover:border-[var(--border-hover)] pl-10 pr-24 text-sm placeholder:text-[var(--muted-foreground)] focus:outline-none focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
       />
       {local ? (
         <button onClick={clearSearch} aria-label="Clear search" className="absolute right-[86px] top-1/2 -translate-y-1/2 h-6 w-6 grid place-items-center rounded-full text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--border)] text-lg leading-none">×</button>
@@ -169,7 +169,7 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
 
           <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
             {canInstall && (
-              <button onClick={handleInstall} className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors pressable">
+              <button onClick={handleInstall} className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-sm shadow-[var(--accent)]/25 transition-colors pressable">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 15V3M8 11l4 4 4-4" /><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" /></svg>
                 Install
               </button>
@@ -177,10 +177,10 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
             {dataSaver && (
               <span className="hidden md:inline-flex items-center gap-1 h-9 px-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 text-[11px] font-bold" title="Data saver is on">◒ Saver</span>
             )}
-            <button onClick={() => setSettingsOpen(true)} aria-label="Open settings" title="Settings" className="h-9 w-9 grid place-items-center rounded-xl bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] transition-colors pressable">
+            <button onClick={() => setSettingsOpen(true)} aria-label="Open settings" title="Settings" className="icon-btn pressable">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>
             </button>
-            <button onClick={toggle} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} title="Toggle theme" className="h-9 w-9 grid place-items-center rounded-xl bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] transition-colors pressable">
+            <button onClick={toggle} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} title="Toggle theme" className="icon-btn pressable">
               {theme === "dark" ? (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
               ) : (

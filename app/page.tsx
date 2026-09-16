@@ -267,29 +267,31 @@ export default function Home() {
       <Header onSearch={handleSearch} searchValue={search} />
 
       {/* hero — compact, premium */}
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-16 pb-4">
+      <div className="relative overflow-hidden mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-16 pb-6">
+        <div className="hero-glow" aria-hidden="true" />
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-emerald-400">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
             LIVE NOW
           </div>
           <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]">
-            Radio.<br className="sm:hidden" />Everywhere.
+            Radio.<br className="sm:hidden" />{" "}
+            <span className="text-gradient">Everywhere.</span>
           </h1>
-          <p className="mt-3.5 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]">
+          <p className="mt-4 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]">
             45,000 live stations. Any country, any genre. Just press play.
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-3">
             <button
               onClick={surprise}
               disabled={!stations.length}
-              className="rounded-2xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-6 py-3 text-sm font-bold shadow-lg shadow-[var(--accent)]/20 transition-all pressable disabled:opacity-40"
+              className="rounded-2xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-6 py-3 text-sm font-bold shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/30 transition-all pressable disabled:opacity-40 disabled:shadow-none"
             >
               Surprise me
             </button>
             <a
               href="#browse"
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)] px-6 py-3 text-sm font-semibold transition-all pressable"
+              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)] px-6 py-3 text-sm font-semibold shadow-sm transition-all pressable"
             >
               Browse all
             </a>
@@ -305,7 +307,7 @@ export default function Home() {
       )}
 
       {/* controls */}
-      <div id="browse" className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-6 scroll-mt-20">
+      <div id="browse" className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-6 scroll-mt-[120px] sm:scroll-mt-24">
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
           <div className="flex items-center rounded-2xl bg-[var(--muted)]/70 border border-[var(--border)] p-1 gap-1 shrink-0" role="tablist" aria-label="Station lists">
             {tabs.map(([k, label]) => (
@@ -320,7 +322,7 @@ export default function Home() {
           </div>
           <div className="ml-auto hidden md:flex items-center gap-2 shrink-0">
             <label className="sr-only" htmlFor="sort">Sort by</label>
-            <select id="sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-10 rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium focus:outline-none focus:border-[var(--accent)]/50">
+            <select id="sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="app-select w-auto min-w-[150px]">
               <option value="clicks">Most played</option>
               <option value="votes">Most loved</option>
               <option value="name">A – Z</option>
@@ -340,7 +342,7 @@ export default function Home() {
         <div className="mt-3 grid grid-cols-2 md:grid-cols-[1fr_1fr_1fr_auto] gap-2">
           <label className="block">
             <span className="sr-only">Filter by country</span>
-            <select value={country} onChange={(e) => setCountry(e.target.value)} className="h-11 w-full rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium focus:outline-none focus:border-[var(--accent)]/50">
+            <select value={country} onChange={(e) => setCountry(e.target.value)} className="app-select">
               <option value="">🌍 All countries</option>
               {countries.map((c) => <option key={c.iso_3166_1} value={c.iso_3166_1}>{c.name} ({c.stationcount})</option>)}
               {!countries.length && COUNTRIES_FALLBACK.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -348,14 +350,14 @@ export default function Home() {
           </label>
           <label className="block">
             <span className="sr-only">Filter by language</span>
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="h-11 w-full rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium focus:outline-none focus:border-[var(--accent)]/50">
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="app-select">
               <option value="">🗣 All languages</option>
               {languages.map((l) => <option key={l.name} value={l.name}>{l.name} ({l.stationcount})</option>)}
             </select>
           </label>
           <label className="block">
             <span className="sr-only">Filter by genre</span>
-            <select value={tag} onChange={(e) => setTag(e.target.value)} className="h-11 w-full rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium capitalize focus:outline-none focus:border-[var(--accent)]/50">
+            <select value={tag} onChange={(e) => setTag(e.target.value)} className="app-select capitalize">
               <option value="">🎶 All genres</option>
               {tags.map((t) => <option key={t.name} value={t.name}>{t.name} ({t.stationcount})</option>)}
             </select>
@@ -363,13 +365,13 @@ export default function Home() {
           <div className="col-span-2 md:col-span-1 flex gap-2">
             <label className="md:hidden flex-1">
               <span className="sr-only">Sort by</span>
-              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-11 w-full rounded-xl bg-[var(--card)] border border-[var(--border)] px-3 text-[13px] font-medium">
+              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="app-select">
                 <option value="clicks">Most played</option>
                 <option value="votes">Most loved</option>
                 <option value="name">A – Z</option>
               </select>
             </label>
-            <button onClick={() => setView(view === "grid" ? "list" : "grid")} aria-label="Toggle layout" className="md:hidden h-11 w-11 grid place-items-center rounded-xl bg-[var(--card)] border border-[var(--border)] shrink-0 pressable">
+            <button onClick={() => setView(view === "grid" ? "list" : "grid")} aria-label="Toggle layout" className="md:hidden h-11 w-11 grid place-items-center rounded-xl bg-[var(--card)] border border-[var(--border)] hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)] transition-colors shrink-0 pressable">
               {view === "grid" ? (
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
               ) : (
@@ -388,7 +390,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.2) }}
               onClick={() => setTag(tag === t.name ? "" : t.name)}
               aria-pressed={tag === t.name}
-              className={`shrink-0 px-3.5 py-2 text-xs font-semibold border rounded-full capitalize transition-colors pressable ${tag === t.name ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "bg-[var(--card)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)]"}`}
+              className={`shrink-0 px-3.5 py-2 text-xs font-semibold border rounded-full capitalize transition-colors pressable ${tag === t.name ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-sm shadow-[var(--accent)]/25" : "bg-[var(--card)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)]"}`}
             >
               {t.name}
             </motion.button>
@@ -468,7 +470,7 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="border-t border-[var(--border)] mt-10 pb-24">
+      <footer className="border-t border-[var(--border)] mt-10 pb-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--muted-foreground)]">
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-lg bg-[var(--accent)] grid place-items-center">
