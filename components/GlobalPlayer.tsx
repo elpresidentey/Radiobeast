@@ -93,12 +93,9 @@ export function GlobalPlayer() {
           style={{
             width: "100%",
             opacity: isPlaying ? 1 : 0.3,
-            backgroundSize: "200% 100%",
-            backgroundImage: isPlaying ? "linear-gradient(90deg, var(--accent), #fb923c, var(--accent))" : undefined,
-            backgroundColor: isPlaying ? undefined : "var(--border-hover)",
-            animation: isPlaying ? "shimmer 1.6s linear infinite" : undefined,
-            transition: "opacity .35s ease, width .4s cubic-bezier(.16,1,.3,1)",
-            boxShadow: isPlaying ? "0 0 12px var(--accent)" : undefined,
+            backgroundColor: isPlaying ? "var(--accent)" : "var(--border-hover)",
+            transition: "opacity .35s ease, background-color .35s ease, width .4s cubic-bezier(.16,1,.3,1)",
+            boxShadow: isPlaying ? "0 0 10px color-mix(in srgb, var(--accent) 40%, transparent)" : undefined,
           }}
         />
       </div>
