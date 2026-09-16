@@ -13,9 +13,9 @@
   --border: #2e2e33;
   --border-hover: #52525b;
   --input: #27272a;
-  --ring: #f97316;
-  --accent: #f97316;
-  --accent-hover: #ea580c;
+  --ring: #ff3b30;
+  --accent: #ff3b30;
+  --accent-hover: #e02c22;
   --accent-foreground: #ffffff;
   --skeleton: #27272a;
   --skeleton-shine: #3f3f46;
@@ -47,14 +47,15 @@
   --border: #e7e5e4;
   --border-hover: #d6d3d1;
   --input: #e7e5e4;
-  --ring: #f97316;
-  --accent: #f97316;
-  --accent-hover: #ea580c;
+  --ring: #dc2626;
+  --accent: #dc2626;
+  --accent-hover: #b91c1c;
   --accent-foreground: #ffffff;
   --skeleton: #ebe9e7;
   --skeleton-shine: #f8f8f6;
   --success: #16a34a;
-  --destructive: #dc2626;
+  /* danger red kept deeper than --accent so alerts never read as brand CTAs */
+  --destructive: #991b1b;
   --overlay: rgba(12, 10, 9, 0.35);
 
   /* elevation — softer + warmer in light mode */
