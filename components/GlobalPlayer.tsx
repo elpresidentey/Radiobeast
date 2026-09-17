@@ -133,7 +133,7 @@ export function GlobalPlayer() {
             <button onClick={prev} disabled={!queue.length} aria-label="Previous station" className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30 pressable">
               <IconPrev />
             </button>
-            <button onClick={toggle} aria-label={isPlaying ? "Pause" : "Play"} className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--foreground)] text-[var(--background)] shadow-lg shadow-black/20 hover:scale-105 transition-transform pressable">
+            <button onClick={toggle} aria-label={isPlaying ? "Pause" : "Play"} className="grid h-12 w-12 place-items-center rounded-xl bg-[var(--foreground)] text-[var(--background)] shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-transform pressable glow-accent">
               {isPlaying ? <IconPause /> : <span className="ml-0.5"><IconPlay /></span>}
             </button>
             <button onClick={next} disabled={!queue.length} aria-label="Next station" className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--muted)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-30 pressable">

@@ -268,20 +268,43 @@ export default function Home() {
 
       {/* hero — compact, premium */}
       <div className="relative overflow-hidden mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-16 pb-6">
-        <div className="hero-glow" aria-hidden="true" />
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            LIVE NOW
-          </div>
-          <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="tracking-[0.15em]">LIVE NOW</span>
+            </div>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]"
+          >
             Radio.<br className="sm:hidden" />{" "}
-            Everywhere.
-          </h1>
-          <p className="mt-4 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]">
+            <span className="inline-block animate-float">Everywhere.</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.13, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-4 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]"
+          >
             45,000 live stations. Any country, any genre. Just press play.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-7 flex flex-wrap items-center gap-3"
+          >
             <button
               onClick={surprise}
               disabled={!stations.length}
@@ -295,7 +318,7 @@ export default function Home() {
             >
               Browse all
             </a>
-          </div>
+          </motion.div>
         </div>
       </div>
 

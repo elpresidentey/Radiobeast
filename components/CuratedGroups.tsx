@@ -85,7 +85,7 @@ function GroupCard({ station, onPlay }: { station: Station; onPlay: () => void }
       onClick={onPlay}
       className={`card-lift flex items-center gap-3 rounded-2xl border p-3 text-left shrink-0 w-[230px] sm:w-[270px] pressable ${
         isCurrent
-          ? "border-[var(--accent)]/45 bg-[var(--accent)]/5 shadow-md shadow-[var(--accent)]/10"
+          ? "border-[var(--accent)]/45 bg-[var(--accent)]/5 shadow-md shadow-[var(--accent)]/10 glow-accent"
           : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)]"
       }`}
     >
@@ -143,14 +143,15 @@ export function CuratedGroups() {
             </div>
             <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
               {stations.map((s, i) => (
-                <motion.div
+                <motion.button
                   key={s.stationuuid}
-                  initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex-shrink-0"
                 >
                   <GroupCard station={s} onPlay={() => { setQueue(stations); play(s); }} />
-                </motion.div>
+                </motion.button>
               ))}
             </div>
           </div>

@@ -7,8 +7,8 @@ import { Settings } from "@/components/Settings";
 
 function LogoMark() {
   return (
-    <div className="relative grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-[0_6px_20px_rgba(255,59,48,0.35)] shrink-0">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <div className="relative grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl bg-[var(--accent)] text-white shadow-[0_6px_20px_rgba(255,59,48,0.35)] shadow-glow animate-pulse-glow shrink-0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="scale-105 origin-center animate-float">
         <path d="M12 3a9 9 0 0 0-9 9c0 4.97 4.03 9 9 9s9-4.03 9-9-4.03-9-9-9Z" stroke="white" strokeWidth="1.8" />
         <path d="M12 7a5 5 0 0 1 5 5" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
         <path d="M12 10a2 2 0 0 1 2 2" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
