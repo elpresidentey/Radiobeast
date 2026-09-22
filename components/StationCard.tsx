@@ -185,8 +185,8 @@ export function StationCard({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={station.favicon} alt="" loading="lazy" className="card-art absolute inset-0 h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
         ) : (
-          <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[var(--muted)] to-[var(--card)]">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[var(--muted-foreground)] opacity-20"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+          <div className="absolute inset-0 grid place-items-center bg-[var(--muted)]">
+            <span className="text-5xl leading-none drop-shadow-sm" aria-hidden="true">{flagEmoji(station.countrycode)}</span>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

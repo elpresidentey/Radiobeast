@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { StationCard } from "@/components/StationCard";
 import { CuratedGroups } from "@/components/CuratedGroups";
+import { PopularGenres } from "@/components/PopularGenres";
 import {
   Station, Country, Tag, Language,
   getCountries, getTags, getLanguages, getTopStations, getTopVoted,
@@ -54,6 +55,21 @@ function SkeletonCard({ list }: { list?: boolean }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function FilterChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] pl-3 pr-1.5 py-1 text-xs font-semibold text-[var(--foreground)] capitalize">
+      {label}
+      <button
+        onClick={onClear}
+        aria-label={`Remove ${label} filter`}
+        className="grid h-4 w-4 place-items-center rounded-full text-[var(--muted-foreground)] hover:text-[var(--background)] hover:bg-[var(--muted-foreground)] transition-colors leading-none"
+      >
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
+      </button>
+    </span>
   );
 }
 
@@ -252,6 +268,14 @@ export default function Home() {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   };
 
+  const selectGenre = useCallback((t: string) => {
+    setTag(t);
+    setTab("trending");
+    requestAnimationFrame(() => {
+      document.getElementById("browse")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
   const tabs: [Tab, string][] = [
     ["trending", "Trending"],
     ["top", "Top Voted"],
@@ -268,6 +292,7 @@ export default function Home() {
 
       {/* hero — compact, premium */}
       <div className="relative overflow-hidden mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-16 pb-6">
+        <div className="hero-glow" aria-hidden="true" />
         <div className="max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -321,6 +346,13 @@ export default function Home() {
           </motion.div>
         </div>
       </div>
+
+      {/* popular genres — quick sound picker */}
+      {tab === "trending" && !activeSearch && (
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-8">
+          <PopularGenres activeTag={tag} onSelect={selectGenre} />
+        </div>
+      )}
 
       {/* curated genre groups — only on main view */}
       {tab === "trending" && !activeSearch && !country && !tag && !language && (
@@ -424,6 +456,18 @@ export default function Home() {
             </button>
           )}
         </div>
+
+        {/* active filter chips */}
+        {(activeSearch || country || language || tag) && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted-foreground)] mr-0.5">Filters</span>
+            {activeSearch && <FilterChip label={`“${activeSearch}”`} onClear={() => { setSearch(""); setActiveSearch(""); }} />}
+            {country && <FilterChip label={countries.find((c) => c.iso_3166_1 === country)?.name || country} onClear={() => setCountry("")} />}
+            {language && <FilterChip label={language} onClear={() => setLanguage("")} />}
+            {tag && <FilterChip label={tag} onClear={() => setTag("")} />}
+            <button onClick={clear} className="ml-1 text-[11px] font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline underline-offset-2 pressable">Clear all</button>
+          </div>
+        )}
 
         {/* result meta */}
         <div className="mt-4 flex items-center justify-between gap-3" aria-live="polite">
