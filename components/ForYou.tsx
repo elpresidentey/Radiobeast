@@ -60,12 +60,10 @@ function useTaste() {
 function PinChip({
   label,
   pinned,
-  color,
   onToggle,
 }: {
   label: string;
   pinned: boolean;
-  color?: string;
   onToggle: () => void;
 }) {
   return (
@@ -77,7 +75,7 @@ function PinChip({
           ? "text-white"
           : "bg-[var(--card)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--border-hover)]"
       }`}
-      style={pinned ? { backgroundColor: color || "var(--foreground)", borderColor: color || "var(--foreground)" } : undefined}
+      style={pinned ? { backgroundColor: "var(--foreground)", borderColor: "var(--foreground)" } : undefined}
     >
       {pinned ? "📌 " : ""}{label}
     </button>
@@ -210,9 +208,8 @@ export function ForYou() {
                   {GENRES.map((g) => (
                     <PinChip
                       key={g.tag}
-                      label={`${g.emoji} ${g.label}`}
+                      label={g.label}
                       pinned={pinnedGenres.includes(g.tag)}
-                      color={g.color}
                       onToggle={() => togglePinnedGenre(g.tag)}
                     />
                   ))}
@@ -284,15 +281,8 @@ export function ForYou() {
         return (
           <div key={it.key} className="mb-6">
             <div className="flex items-center gap-2.5 mb-3">
-              <div
-                className="h-7 w-7 rounded-lg grid place-items-center text-sm"
-                style={
-                  it.color
-                    ? { backgroundColor: `${it.color}15`, border: `1px solid ${it.color}25` }
-                    : undefined
-                }
-              >
-                {it.kind === "country" ? flag(it.value) : it.emoji || "📻"}
+              <div className="h-7 w-7 rounded-lg grid place-items-center text-sm bg-[var(--muted)] border border-[var(--border)]" aria-hidden="true">
+                {it.kind === "country" ? flag(it.value) : "🎵"}
               </div>
               <h3 className="text-[14px] font-bold tracking-tight text-[var(--foreground)] capitalize">{rowTitle(it)}</h3>
               {stations.length > 0 && (

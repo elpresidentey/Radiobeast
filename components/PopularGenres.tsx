@@ -43,35 +43,15 @@ export function PopularGenres({
               transition={{ delay: Math.min(i * 0.025, 0.3), duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               onClick={() => onSelect(active ? "" : g.tag)}
               aria-pressed={active}
-              className={`group relative flex items-center gap-2.5 overflow-hidden rounded-2xl border p-3 text-left pressable card-lift ${
-                active ? "border-transparent" : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)]"
-              }`}
-              style={
+              className={`flex items-center rounded-2xl border px-3.5 py-3 text-left pressable card-lift ${
                 active
-                  ? { backgroundColor: `${g.color}1a`, borderColor: `${g.color}66`, boxShadow: `0 6px 20px ${g.color}22` }
-                  : undefined
-              }
+                  ? "border-[var(--accent)]/60 bg-[var(--accent)]/[0.07]"
+                  : "border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)]"
+              }`}
             >
-              <span
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-base transition-transform duration-200 group-hover:scale-110"
-                style={{ backgroundColor: `${g.color}1f`, border: `1px solid ${g.color}33` }}
-                aria-hidden="true"
-              >
-                {g.emoji}
-              </span>
-              <span
-                className="truncate text-[13px] font-bold leading-tight"
-                style={{ color: active ? g.color : "var(--foreground)" }}
-              >
+              <span className="truncate text-[13px] font-bold leading-tight text-[var(--foreground)]">
                 {g.label}
               </span>
-              {active && (
-                <span
-                  className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: g.color }}
-                  aria-hidden="true"
-                />
-              )}
             </motion.button>
           );
         })}

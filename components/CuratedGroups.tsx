@@ -137,7 +137,6 @@ export function CuratedGroups() {
         return (
           <div key={group.id}>
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="h-7 w-7 rounded-lg grid place-items-center text-sm" style={{ backgroundColor: `${group.color}15`, border: `1px solid ${group.color}25` }}>{group.emoji}</div>
               <h2 className="text-[14px] font-bold tracking-tight text-[var(--foreground)]">{group.label}</h2>
               <span className="text-[10px] font-bold text-[var(--muted-foreground)] bg-[var(--muted)] px-2 py-0.5 rounded-md">{stations.length} live</span>
             </div>

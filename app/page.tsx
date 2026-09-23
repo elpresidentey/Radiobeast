@@ -11,6 +11,7 @@ import {
   getCountries, getTags, getLanguages, getTopStations, getTopVoted,
   getStationsWithIcecastFallback, getStationByUuid, isGenreTagName,
 } from "@/lib/radio";
+import { getGardenStations, mergeStations } from "@/lib/garden";
 
 function isGenre(t: Tag): boolean {
   if (!isGenreTagName(t.name)) return false;
@@ -139,9 +140,33 @@ export default function Home() {
         };
         if (activeSearch || country || tag || language) {
           data = await getStationsWithIcecastFallback(base, fetchOpts, icecastFallback);
+          // Comprehensive coverage: merge radio.garden results (full places
+          // index, no GPS) for search + country browses. Garden has no
+          // tag/language index, so it only joins those two cases.
+          try {
+            const countryName = country
+              ? countries.find((c) => c.iso_3166_1 === country)?.name
+              : undefined;
+            const gardenOpts: { search?: string; countryName?: string; limit: number; offset: number } = {
+              limit, offset: off,
+            };
+            if (activeSearch) gardenOpts.search = activeSearch;
+            else if (countryName) gardenOpts.countryName = countryName;
+            else gardenOpts.limit = Math.min(limit, 12);
+            if (gardenOpts.search || gardenOpts.countryName) {
+              const garden = await getGardenStations(gardenOpts);
+              if (garden.length) data = mergeStations(data, garden).slice(0, limit + 12);
+            }
+          } catch { /* garden is best-effort — radio-browser result stands */ }
         } else if (tab === "trending") {
           const top = await getTopStations(limit + off, fetchOpts);
           data = top.slice(off, off + limit);
+          // Comprehensive coverage: enrich trending with radio.garden
+          // popular places (no GPS, pure size-desc coverage order).
+          try {
+            const garden = await getGardenStations({ limit, offset: off });
+            if (garden.length) data = mergeStations(data, garden).slice(0, limit + 12);
+          } catch { /* best-effort */ }
           if (icecastFallback && data.length < 6) {
             const { getIcecastStations } = await import("@/lib/radio");
             const extra = await getIcecastStations({ limit });
@@ -181,7 +206,7 @@ export default function Home() {
     setLoading(false);
     setLoadingMore(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, activeSearch, country, language, tag, sort, limit, dataSaver, preferSelfHost, icecastFallback]);
+  }, [tab, activeSearch, country, language, tag, sort, limit, dataSaver, preferSelfHost, icecastFallback, countries]);
   const fetchStations = useCallback((reset = true) => fetchStationsImpl(reset), [fetchStationsImpl]);
 
   // reset on filter change
@@ -275,29 +300,16 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <Header onSearch={handleSearch} searchValue={search} />
 
-      {/* hero — compact, premium */}
-      <div className="relative overflow-hidden mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-16 pb-6">
-        <div className="hero-glow" aria-hidden="true" />
+      {/* hero — calm, monochrome */}
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 pt-10 sm:pt-16 pb-6">
         <div className="max-w-2xl">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="tracking-[0.15em]">LIVE NOW</span>
-            </div>
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]"
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]"
           >
-            Radio.<br className="sm:hidden" />{" "}
-            <span className="inline-block animate-float">Everywhere.</span>
+            Radio.<br className="sm:hidden" /> Everywhere.
           </motion.h1>
 
           <motion.p
@@ -306,7 +318,7 @@ export default function Home() {
             transition={{ duration: 0.45, delay: 0.13, ease: [0.16, 1, 0.3, 1] }}
             className="mt-4 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]"
           >
-            45,000 live stations. Any country, any genre. Just press play.
+            Live stations worldwide — radio-browser + radio.garden combined. Just press play.
           </motion.p>
 
           <motion.div
@@ -318,13 +330,13 @@ export default function Home() {
             <button
               onClick={surprise}
               disabled={!stations.length}
-              className="rounded-2xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-6 py-3 text-sm font-bold shadow-lg shadow-[var(--accent)]/25 hover:shadow-xl hover:shadow-[var(--accent)]/30 transition-all pressable disabled:opacity-40 disabled:shadow-none"
+              className="btn btn-primary"
             >
               Surprise me
             </button>
             <a
               href="#browse"
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)] px-6 py-3 text-sm font-semibold shadow-sm transition-all pressable"
+              className="btn btn-secondary"
             >
               Browse all
             </a>
@@ -425,7 +437,7 @@ export default function Home() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
               )}
             </button>
-            {hasFilters && <button onClick={clear} className="h-11 rounded-xl bg-[var(--foreground)] text-[var(--background)] px-5 text-sm font-semibold shrink-0 pressable hover:opacity-90">Clear</button>}
+            {hasFilters && <button onClick={clear} className="btn btn-neutral h-11 px-5 shrink-0">Clear</button>}
           </div>
         </div>
 
@@ -488,7 +500,7 @@ export default function Home() {
             </div>
             <p className="text-[var(--destructive)] font-semibold text-sm">{error}</p>
             <p className="text-[var(--muted-foreground)] text-xs mt-1">Check your connection or try a different server.</p>
-            <button onClick={() => fetchStations(true)} className="mt-4 rounded-xl bg-[var(--foreground)] text-[var(--background)] px-6 py-2.5 text-sm font-semibold pressable">Retry</button>
+            <button onClick={() => fetchStations(true)} className="btn btn-neutral mt-4">Retry</button>
           </div>
         ) : displayed.length === 0 ? (
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-10 sm:p-16 text-center">
@@ -498,8 +510,8 @@ export default function Home() {
             <h3 className="font-bold mt-5 text-base">{tab === "favorites" ? "No favourites yet" : tab === "recent" ? "Nothing played yet" : "No stations found"}</h3>
             <p className="text-sm text-[var(--muted-foreground)] mt-2 max-w-sm mx-auto leading-relaxed">{tab === "favorites" ? "Tap the heart on any station to save it here for quick access." : tab === "recent" ? "Hit play on anything — your listening history lands here." : "Try a different search or loosen your filters."}</p>
             <div className="mt-6 flex justify-center gap-2.5">
-              {hasFilters && <button onClick={clear} className="rounded-xl bg-[var(--foreground)] text-[var(--background)] px-6 py-2.5 text-sm font-semibold pressable">Clear filters</button>}
-              <button onClick={surprise} className="rounded-xl border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)] px-6 py-2.5 text-sm font-semibold pressable">Surprise me</button>
+              {hasFilters && <button onClick={clear} className="btn btn-neutral">Clear filters</button>}
+              <button onClick={surprise} className="btn btn-secondary">Surprise me</button>
             </div>
           </div>
         ) : (
@@ -517,7 +529,7 @@ export default function Home() {
             {tab !== "favorites" && tab !== "recent" && (
               <div ref={sentinelRef} className="flex justify-center py-8">
                 {hasMore ? (
-                  <button onClick={() => fetchStations(false)} disabled={loadingMore} className="w-full sm:w-auto rounded-2xl bg-[var(--foreground)] text-[var(--background)] px-8 py-3 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity pressable">
+                  <button onClick={() => fetchStations(false)} disabled={loadingMore} className="btn btn-neutral w-full sm:w-auto px-8">
                     {loadingMore ? "Loading…" : `Load ${limit} more`}
                   </button>
                 ) : (
@@ -537,7 +549,7 @@ export default function Home() {
             </div>
             <span className="font-semibold text-[var(--foreground)]">Radiobeast</span>
             <span className="text-[var(--border-hover)]">·</span>
-            <span>45k+ stations · Free · No sign-up</span>
+            <span>Worldwide stations · Free · No sign-up</span>
           </div>
           <span className="flex gap-3 items-center text-[11px] tracking-wide">
             <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">Space</kbd> play

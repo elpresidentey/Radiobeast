@@ -190,6 +190,47 @@ export async function getTags(limit = 50, fetchOpts: FetchOpts = {}): Promise<Ta
   return fetchWithFallback("/tags", { order: "stationcount", reverse: "true", limit: String(limit), hidebroken: "true" }, fetchOpts);
 }
 export async function getStationByUuid(uuid: string, fetchOpts: FetchOpts = {}): Promise<Station | null> {
+  // radio.garden stations use `garden:<channelId>` uuids — resolve via our proxy.
+  if (uuid.startsWith("garden:")) {
+    const id = uuid.slice("garden:".length).replace(/[^A-Za-z0-9_-]/g, "");
+    if (!id) return null;
+    try {
+      const res = await fetch(`/api/garden/channel/${encodeURIComponent(id)}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      const c = json?.channel;
+      if (!c?.id) return null;
+      const now = new Date().toISOString();
+      return {
+        changeuuid: `garden:${c.id}`,
+        stationuuid: `garden:${c.id}`,
+        name: c.title || "Unknown station",
+        url: `https://radio.garden/api/ara/content/listen/${c.id}/channel.mp3`,
+        url_resolved: `https://radio.garden/api/ara/content/listen/${c.id}/channel.mp3`,
+        homepage: c.website || "",
+        favicon: "",
+        tags: "",
+        country: c.country || "",
+        countrycode: "",
+        state: c.place || "",
+        language: "",
+        languagecodes: "",
+        votes: 0,
+        lastchangetime: now,
+        codec: "MP3",
+        bitrate: 0,
+        hls: 0,
+        lastcheckok: 1,
+        lastchecktime: now,
+        clicktimestamp: now,
+        clickcount: 0,
+        clicktrend: 0,
+        ssl_error: 0,
+      } as Station;
+    } catch {
+      return null;
+    }
+  }
   const res: Station[] = await fetchWithFallback("/stations/byuuid", { uuids: uuid }, fetchOpts);
   return res[0] || null;
 }
