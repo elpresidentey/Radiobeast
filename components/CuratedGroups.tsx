@@ -76,7 +76,7 @@ function flag(code: string) {
   return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
 }
 
-function GroupCard({ station, onPlay }: { station: Station; onPlay: () => void }) {
+export function GroupCard({ station, onPlay }: { station: Station; onPlay: () => void }) {
   const { current, isPlaying } = usePlayerStore();
   const isCurrent = current?.stationuuid === station.stationuuid && isPlaying;
 
@@ -142,8 +142,8 @@ export function CuratedGroups() {
               <span className="text-[10px] font-bold text-[var(--muted-foreground)] bg-[var(--muted)] px-2 py-0.5 rounded-md">{stations.length} live</span>
             </div>
             <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
-              {stations.map((s, i) => (
-                <motion.button
+              {stations.map((s) => (
+                <motion.div
                   key={s.stationuuid}
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.97 }}
@@ -151,7 +151,7 @@ export function CuratedGroups() {
                   className="flex-shrink-0"
                 >
                   <GroupCard station={s} onPlay={() => { setQueue(stations); play(s); }} />
-                </motion.button>
+                </motion.div>
               ))}
             </div>
           </div>

@@ -11,6 +11,9 @@ type PlayerState = {
   isMuted: boolean;
   favorites: string[]; // stationuuids
   recent: Station[];
+  pinnedGenres: string[]; // radio-browser tags
+  pinnedCountries: string[]; // iso 3166-1 codes
+  pinnedLanguages: string[]; // language names
   dataSaver: boolean;
   sleepTimer: number | null; // timestamp when timer should stop
   compactMode: boolean;
@@ -24,6 +27,9 @@ type PlayerState = {
   setVolume: (v: number) => void;
   toggleMute: () => void;
   toggleFavorite: (uuid: string) => void;
+  togglePinnedGenre: (tag: string) => void;
+  togglePinnedCountry: (code: string) => void;
+  togglePinnedLanguage: (lang: string) => void;
   setQueue: (q: Station[]) => void;
   next: () => void;
   prev: () => void;
@@ -48,6 +54,9 @@ const SAVER_KEY = "radiobeast:saver";
 const SLEEP_KEY = "radiobeast:sleep";
 const SELF_HOST_KEY = "radiobeast:preferSelfHost";
 const ICECAST_KEY = "radiobeast:icecastFallback";
+const PIN_GENRES_KEY = "radiobeast:pinnedGenres";
+const PIN_COUNTRIES_KEY = "radiobeast:pinnedCountries";
+const PIN_LANGUAGES_KEY = "radiobeast:pinnedLanguages";
 
 function loadFavs(): string[] {
   if (typeof window === "undefined") return [];
@@ -74,6 +83,20 @@ function loadIcecastFallback(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(ICECAST_KEY) === "1";
 }
+function loadPinned(key: string): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const v = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function togglePinnedList(key: string, current: string[], value: string): string[] {
+  const list = current.includes(value) ? current.filter((x) => x !== value) : [...current, value];
+  if (typeof window !== "undefined") localStorage.setItem(key, JSON.stringify(list));
+  return list;
+}
 function loadSleepTimer(): number | null {
   if (typeof window === "undefined") return null;
   const v = localStorage.getItem(SLEEP_KEY);
@@ -97,6 +120,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isMuted: false,
   favorites: typeof window !== "undefined" ? loadFavs() : [],
   recent: typeof window !== "undefined" ? loadRecent() : [],
+  pinnedGenres: typeof window !== "undefined" ? loadPinned(PIN_GENRES_KEY) : [],
+  pinnedCountries: typeof window !== "undefined" ? loadPinned(PIN_COUNTRIES_KEY) : [],
+  pinnedLanguages: typeof window !== "undefined" ? loadPinned(PIN_LANGUAGES_KEY) : [],
   dataSaver: typeof window !== "undefined" ? loadSaver() : false,
   sleepTimer: typeof window !== "undefined" ? loadSleepTimer() : null,
   compactMode: false,
@@ -122,6 +148,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const next = favs.includes(uuid) ? favs.filter((x) => x !== uuid) : [...favs, uuid];
     if (typeof window !== "undefined") localStorage.setItem(FAV_KEY, JSON.stringify(next));
     set({ favorites: next });
+  },
+  togglePinnedGenre: (tag) => {
+    set({ pinnedGenres: togglePinnedList(PIN_GENRES_KEY, get().pinnedGenres, tag) });
+  },
+  togglePinnedCountry: (code) => {
+    set({ pinnedCountries: togglePinnedList(PIN_COUNTRIES_KEY, get().pinnedCountries, code) });
+  },
+  togglePinnedLanguage: (lang) => {
+    set({ pinnedLanguages: togglePinnedList(PIN_LANGUAGES_KEY, get().pinnedLanguages, lang) });
   },
   setQueue: (q) => set({ queue: q }),
   next: () => {
@@ -213,6 +248,12 @@ if (typeof window !== "undefined") {
     const preferSelfHost = loadPreferSelfHost();
     const icecastFallback = loadIcecastFallback();
     const savedStations = loadSaved();
-    usePlayerStore.setState({ favorites: favs, recent, volume: vol, dataSaver: saver, sleepTimer: sleep, preferSelfHost, icecastFallback, savedStations });
+    usePlayerStore.setState({
+      favorites: favs, recent, volume: vol, dataSaver: saver, sleepTimer: sleep,
+      preferSelfHost, icecastFallback, savedStations,
+      pinnedGenres: loadPinned(PIN_GENRES_KEY),
+      pinnedCountries: loadPinned(PIN_COUNTRIES_KEY),
+      pinnedLanguages: loadPinned(PIN_LANGUAGES_KEY),
+    });
   }, 0);
 }

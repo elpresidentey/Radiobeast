@@ -5,30 +5,15 @@ import { Header } from "@/components/Header";
 import { StationCard } from "@/components/StationCard";
 import { CuratedGroups } from "@/components/CuratedGroups";
 import { PopularGenres } from "@/components/PopularGenres";
+import { ForYou } from "@/components/ForYou";
 import {
   Station, Country, Tag, Language,
   getCountries, getTags, getLanguages, getTopStations, getTopVoted,
-  getStationsWithIcecastFallback, getStationByUuid,
+  getStationsWithIcecastFallback, getStationByUuid, isGenreTagName,
 } from "@/lib/radio";
 
-// Tags that are NOT genres — filter them out of the pill list
-const NON_GENRE = new Set([
-  "music", "radio", "fm", "hd", "live", "stream", "online", "web", "internet",
-  "estación", "estacion", "emisora", "entretenimiento", "música", "musica",
-  "música en español", "música pop", "música rock", "música latina",
-  "pop music", "top 40", "top hits", "hits", "best", "popular",
-  "public radio", "community radio", "college radio", "student radio",
-  "local news", "local", "regional", "nacional", "norteamérica",
-  "latinoamérica", "américa", "méxico", "español", "english", "spanish",
-  "french", "german", "arabic", "chinese", "japanese", "korean", "portuguese",
-  "deutsch", "français", "italiano", "russian", "hindi", "turkish",
-  "moi merino", "world", "world music", "various", "misc",
-  "blog", "info", "noticias", "noticia", "deportes", "cultura",
-]);
 function isGenre(t: Tag): boolean {
-  const n = t.name.toLowerCase().trim();
-  if (NON_GENRE.has(n)) return false;
-  if (n.length < 2) return false;
+  if (!isGenreTagName(t.name)) return false;
   // skip if it's just a country/language name (no spaces unless it's a known compound)
   if (/^[A-Z][a-z]+$/.test(t.name) && t.stationcount < 200) return false;
   return true;
@@ -346,6 +331,13 @@ export default function Home() {
           </motion.div>
         </div>
       </div>
+
+      {/* For You — personalized mix (pins + learned taste) */}
+      {tab === "trending" && !activeSearch && (
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-8">
+          <ForYou />
+        </div>
+      )}
 
       {/* popular genres — quick sound picker */}
       {tab === "trending" && !activeSearch && (

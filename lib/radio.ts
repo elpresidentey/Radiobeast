@@ -202,6 +202,28 @@ export async function clickStation(uuid: string) {
 export function tagList(tags: string): string[] {
   return tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 4);
 }
+
+// Tags that are NOT genres — used to keep genre lists and learned tastes clean
+export const NON_GENRE_TAGS = new Set([
+  "music", "radio", "fm", "hd", "live", "stream", "online", "web", "internet",
+  "estación", "estacion", "emisora", "entretenimiento", "música", "musica",
+  "música en español", "música pop", "música rock", "música latina",
+  "pop music", "top 40", "top hits", "hits", "best", "popular",
+  "public radio", "community radio", "college radio", "student radio",
+  "local news", "local", "regional", "nacional", "norteamérica",
+  "latinoamérica", "américa", "méxico", "español", "english", "spanish",
+  "french", "german", "arabic", "chinese", "japanese", "korean", "portuguese",
+  "deutsch", "français", "italiano", "russian", "hindi", "turkish",
+  "moi merino", "world", "world music", "various", "misc",
+  "blog", "info", "noticias", "noticia", "deportes", "cultura",
+]);
+
+export function isGenreTagName(name: string): boolean {
+  const n = name.toLowerCase().trim();
+  if (NON_GENRE_TAGS.has(n)) return false;
+  if (/^\d+$/.test(n)) return false; // decade tags like "1930"
+  return n.length >= 2;
+}
 export function stationImage(s: Station) {
   if (s.favicon && s.favicon.startsWith("http")) return s.favicon;
   return "";
@@ -212,14 +234,17 @@ export async function getSimilarStations(station: Station, limit = 6): Promise<S
   const params = buildSearchParams({
     countrycode: station.countrycode,
     tag: tags[0] || undefined,
-    limit: limit + 1,
+    limit: limit + 5,
     hidebroken: true,
     order: "votes",
     reverse: true,
   });
   const stations: Station[] = await fetchWithFallback("/stations/search", params);
-  // Filter out the current station and limit results
-  return stations.filter(s => s.stationuuid !== station.stationuuid).slice(0, limit);
+  // filterStations drops stations whose last check is stale — suggestions must be
+  // stations that are actually likely to play
+  return filterStations(stations)
+    .filter(s => s.stationuuid !== station.stationuuid)
+    .slice(0, limit);
 }
 
 // — Icecast fallback —

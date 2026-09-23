@@ -11,6 +11,8 @@ export function useAudioPlayer() {
   const hlsRef = useRef<Hls | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // True only when every stream candidate failed — used to offer alternatives
+  const [streamFailed, setStreamFailed] = useState(false);
   const [playingOffline, setPlayingOffline] = useState(false);
   const fallbackRef = useRef(0);
   const sourceChangingRef = useRef(false);
@@ -78,6 +80,7 @@ export function useAudioPlayer() {
 
     setError(null);
     setLoading(true);
+    setStreamFailed(false);
     setPlayingOffline(false);
     fallbackRef.current = 0;
     sourceChangingRef.current = true;
@@ -133,6 +136,7 @@ export function useAudioPlayer() {
       if (!alive()) return;
       if (fallbackRef.current >= candidates.length) {
         setError("Stream unavailable — try another station");
+        setStreamFailed(true);
         setLoading(false);
         setPlaying(false);
         finish();
@@ -168,6 +172,7 @@ export function useAudioPlayer() {
             setTimeout(tryNextCandidate, 500);
           } else {
             setError("Stream unavailable — try another station");
+            setStreamFailed(true);
             setLoading(false);
             setPlaying(false);
             finish();
@@ -182,6 +187,7 @@ export function useAudioPlayer() {
             setTimeout(tryNextCandidate, 300);
           } else {
             setError("Stream unavailable — try another station");
+            setStreamFailed(true);
             setLoading(false);
             setPlaying(false);
             finish();
@@ -209,6 +215,7 @@ export function useAudioPlayer() {
             setTimeout(tryNextCandidate, 300);
           } else {
             setError("Stream unavailable — try another station");
+            setStreamFailed(true);
             setLoading(false);
             setPlaying(false);
             finish();
@@ -262,5 +269,5 @@ export function useAudioPlayer() {
     return () => clearInterval(checkTimer);
   }, [sleepTimer, setPlaying]);
 
-  return { audioRef, error, loading, playingOffline, clearError: () => setError(null) };
+  return { audioRef, error, loading, playingOffline, streamFailed, clearError: () => setError(null) };
 }

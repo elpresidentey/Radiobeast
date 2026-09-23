@@ -4,6 +4,7 @@ import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useNowPlaying } from "@/hooks/useNowPlaying";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Station, getSimilarStations } from "@/lib/radio";
 
 function flag(code: string) {
   if (!code || code.length !== 2) return "🌍";
@@ -37,11 +38,26 @@ export function GlobalPlayer() {
     favorites, toggleFavorite, next, prev, queue, dataSaver,
     sleepTimer, setSleepTimer, play, powerOff,
   } = usePlayerStore();
-  const { error, loading, playingOffline, clearError } = useAudioPlayer();
+  const { error, loading, playingOffline, streamFailed, clearError } = useAudioPlayer();
   const { title: nowPlayingTitle } = useNowPlaying();
   const [expanded, setExpanded] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const [sleepLeft, setSleepLeft] = useState<number | null>(null);
+  const [suggestions, setSuggestions] = useState<Station[]>([]);
+  const [suggestionsFor, setSuggestionsFor] = useState<string | null>(null);
+
+  const showSuggestions = streamFailed && !!current;
+  const loadingSuggestions = showSuggestions && current.stationuuid !== suggestionsFor;
+  const visibleSuggestions = showSuggestions && current.stationuuid === suggestionsFor ? suggestions : [];
+
+  useEffect(() => {
+    if (!streamFailed || !current) return;
+    let cancelled = false;
+    getSimilarStations(current, 6)
+      .then((list) => { if (!cancelled) { setSuggestionsFor(current.stationuuid); setSuggestions(list); } })
+      .catch(() => { if (!cancelled) { setSuggestionsFor(current.stationuuid); setSuggestions([]); } });
+    return () => { cancelled = true; };
+  }, [streamFailed, current]);
 
   useEffect(() => {
     if (!sleepTimer) {
@@ -79,6 +95,24 @@ export function GlobalPlayer() {
         <div className="flex items-center justify-between gap-2 bg-red-500/10 border-b border-red-500/20 px-4 py-2 text-sm text-red-400" role="alert">
           <span className="truncate text-xs sm:text-sm">{error}</span>
           <button onClick={clearError} className="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-semibold shrink-0 pressable">Dismiss</button>
+        </div>
+      )}
+      {streamFailed && (loadingSuggestions || visibleSuggestions.length > 0) && (
+        <div className="border-b border-[var(--border)] bg-[var(--muted)]/40 px-3 sm:px-4 py-2">
+          <div className="mx-auto max-w-6xl flex items-center gap-2 overflow-x-auto scrollbar-none">
+            <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+              {loadingSuggestions ? "Finding similar…" : "Try instead →"}
+            </span>
+            {visibleSuggestions.map((s) => (
+              <button
+                key={s.stationuuid}
+                onClick={() => play(s)}
+                className="shrink-0 max-w-[220px] truncate rounded-full border border-[var(--border)] bg-[var(--card)] hover:border-[var(--border-hover)] hover:bg-[var(--card-hover)] px-3 py-1.5 text-xs font-semibold pressable"
+              >
+                {flag(s.countrycode)} {s.name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {playingOffline && (
