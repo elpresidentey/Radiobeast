@@ -402,7 +402,7 @@ export default function Home() {
           <label className="block">
             <span className="sr-only">Filter by country</span>
             <select value={country} onChange={(e) => setCountry(e.target.value)} className="app-select">
-              <option value="">🌍 All countries</option>
+              <option value="">All countries</option>
               {countries.map((c) => <option key={c.iso_3166_1} value={c.iso_3166_1}>{c.name} ({c.stationcount})</option>)}
               {!countries.length && COUNTRIES_FALLBACK.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -410,14 +410,14 @@ export default function Home() {
           <label className="block">
             <span className="sr-only">Filter by language</span>
             <select value={language} onChange={(e) => setLanguage(e.target.value)} className="app-select">
-              <option value="">🗣 All languages</option>
+              <option value="">All languages</option>
               {languages.map((l) => <option key={l.name} value={l.name}>{l.name} ({l.stationcount})</option>)}
             </select>
           </label>
           <label className="block">
             <span className="sr-only">Filter by genre</span>
             <select value={tag} onChange={(e) => setTag(e.target.value)} className="app-select capitalize">
-              <option value="">🎶 All genres</option>
+              <option value="">All genres</option>
               {tags.map((t) => <option key={t.name} value={t.name}>{t.name} ({t.stationcount})</option>)}
             </select>
           </label>
@@ -533,7 +533,7 @@ export default function Home() {
                     {loadingMore ? "Loading…" : `Load ${limit} more`}
                   </button>
                 ) : (
-                  <p className="text-xs text-[var(--muted-foreground)]">You’ve reached the end — try new filters or 🔀 Surprise me.</p>
+                   <p className="text-xs text-[var(--muted-foreground)]">You’ve reached the end — try new filters or Surprise me.</p>
                 )}
               </div>
             )}

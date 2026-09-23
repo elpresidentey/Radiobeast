@@ -94,7 +94,7 @@ export async function getGardenPlaces(): Promise<GardenPlace[]> {
   return places;
 }
 
-export async function getGardenPlaceStations(placeId: string, limit = 24): Promise<Station[]> {
+export async function getGardenPlaceStations(placeId: string, limit = 100): Promise<Station[]> {
   const res = await fetch(`/api/garden/place/${encodeURIComponent(placeId)}`);
   if (!res.ok) throw new Error(`Garden place failed: ${res.status}`);
   const json = await res.json();
@@ -146,15 +146,16 @@ export async function getGardenStations(opts: {
   }
   const sorted = [...pool].sort((a, b) => b.size - a.size || a.title.localeCompare(b.title));
 
-  // Estimate: avg ~8 usable stations per place page. Fetch enough places
-  // to cover offset+limit, capped to avoid hammering the proxy.
-  const perPlace = 8;
+  // Estimate: a place page holds its full station list (~40+ usable).
+  // Fetch enough places to cover offset+limit, capped to avoid
+  // hammering the proxy.
+  const perPlace = 40;
   const needStations = offset + limit;
   const needPlaces = Math.min(Math.ceil(needStations / perPlace) + 1, 12);
   const wanted = sorted.slice(0, needPlaces);
   if (!wanted.length) return [];
 
-  const settled = await Promise.allSettled(wanted.map((p) => getGardenPlaceStations(p.id, 20)));
+  const settled = await Promise.allSettled(wanted.map((p) => getGardenPlaceStations(p.id, 100)));
   const all: Station[] = [];
   const seen = new Set<string>();
   for (const r of settled) {

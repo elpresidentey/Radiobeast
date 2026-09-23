@@ -72,7 +72,7 @@ const GROUPS: CuratedGroup[] = [
 ];
 
 function flag(code: string) {
-  if (!code || code.length !== 2) return "🌍";
+  if (!code || code.length !== 2) return "♪";
   return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
 }
 

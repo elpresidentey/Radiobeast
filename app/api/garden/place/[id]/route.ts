@@ -3,6 +3,9 @@ import type { NextRequest } from "next/server";
 export const revalidate = 3600; // 1h — place pages change slowly
 
 const GARDEN_BASE = "https://radio.garden/api";
+// Full browser-like headers are required: radio.garden's Cloudflare check
+// blocks bare / missing User-Agents on the /channels sub-endpoint.
+const MAX_CHANNELS = 120;
 
 function gardenHeaders() {
   return {
@@ -35,43 +38,59 @@ function isNearbyList(title: string): boolean {
   return title.toLowerCase().startsWith("nearby");
 }
 
+function extractChannels(content: unknown[]): GardenChannel[] {
+  const channels: GardenChannel[] = [];
+  const seen = new Set<string>();
+  for (const list of content) {
+    const l = list as { itemsType?: string; title?: string; items?: unknown[] };
+    if (!l || l.itemsType !== "channel" || !Array.isArray(l.items)) continue;
+    if (typeof l.title === "string" && isNearbyList(l.title)) continue;
+    for (const item of l.items) {
+      const page = (item as { page?: { type?: string; url?: string; title?: string; place?: { title?: string }; country?: { title?: string }; subtitle?: string; secure?: boolean } })?.page;
+      if (!page || page.type !== "channel" || typeof page.url !== "string") continue;
+      const cid = channelIdFromHref(page.url);
+      if (!cid || seen.has(cid)) continue;
+      seen.add(cid);
+      channels.push({
+        id: cid,
+        title: page.title || "Unknown station",
+        place: page.place?.title || "",
+        country: page.country?.title || "",
+        subtitle: page.subtitle || "",
+        secure: !!page.secure,
+      });
+      if (channels.length >= MAX_CHANNELS) break;
+    }
+    if (channels.length >= MAX_CHANNELS) break;
+  }
+  return channels;
+}
+
+async function fetchPage(path: string) {
+  const res = await fetch(`${GARDEN_BASE}${path}`, {
+    headers: gardenHeaders(),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error(`upstream ${res.status} for ${path}`);
+  return res.json();
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!id || !/^[A-Za-z0-9_-]{4,16}$/.test(id)) {
     return Response.json({ channels: [], error: "invalid id" }, { status: 400 });
   }
   try {
-    const res = await fetch(`${GARDEN_BASE}/ara/content/page/${encodeURIComponent(id)}`, {
-      headers: gardenHeaders(),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!res.ok) return Response.json({ channels: [], error: `upstream ${res.status}` }, { status: 502 });
-    const json = await res.json();
-    const content = json?.data?.content || [];
-    const channels: GardenChannel[] = [];
-    const seen = new Set<string>();
-
-    for (const list of content) {
-      if (!list || list.itemsType !== "channel" || !Array.isArray(list.items)) continue;
-      if (typeof list.title === "string" && isNearbyList(list.title)) continue;
-      for (const item of list.items) {
-        const page = item?.page;
-        if (!page || page.type !== "channel" || typeof page.url !== "string") continue;
-        const cid = channelIdFromHref(page.url);
-        if (!cid || seen.has(cid)) continue;
-        seen.add(cid);
-        channels.push({
-          id: cid,
-          title: page.title || "Unknown station",
-          place: page.place?.title || "",
-          country: page.country?.title || "",
-          subtitle: page.subtitle || "",
-          secure: !!page.secure,
-        });
-        if (channels.length >= 60) break;
-      }
-      if (channels.length >= 60) break;
+    // Prefer the full "View all N stations" list so no station is missed.
+    // Fall back to the place overview page (subset) if it is unreachable.
+    let json: unknown = null;
+    try {
+      json = await fetchPage(`/ara/content/page/${encodeURIComponent(id)}/channels`);
+    } catch {
+      json = await fetchPage(`/ara/content/page/${encodeURIComponent(id)}`);
     }
+    const content = (json as { data?: { content?: unknown[] } })?.data?.content || [];
+    const channels = extractChannels(content);
 
     return Response.json(
       { channels, count: channels.length },

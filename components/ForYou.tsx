@@ -19,7 +19,7 @@ type Interest = {
 const MAX_ROWS = 4;
 
 function flag(code: string) {
-  if (!code || code.length !== 2) return "🌍";
+  if (!code || code.length !== 2) return "♪";
   return code.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
 }
 
@@ -176,9 +176,7 @@ export function ForYou() {
     <section aria-label="For you" className="scroll-mt-[120px] sm:scroll-mt-24">
       <div className="flex items-end justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-[15px] sm:text-base font-bold tracking-tight text-[var(--foreground)] flex items-center gap-2">
-            <span aria-hidden="true">✨</span> For You
-          </h2>
+            <h2 className="text-[15px] sm:text-base font-bold tracking-tight text-[var(--foreground)]">For You</h2>
           <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{subtitle}</p>
         </div>
         {hasAnyData && (
@@ -255,9 +253,8 @@ export function ForYou() {
 
       {jumpBack.length > 0 && (
         <div className="mb-6">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="h-7 w-7 rounded-lg grid place-items-center text-sm bg-[var(--muted)] border border-[var(--border)]">🕒</div>
-            <h3 className="text-[14px] font-bold tracking-tight text-[var(--foreground)]">Jump back in</h3>
+            <div className="flex items-center gap-2.5 mb-3">
+              <h3 className="text-[14px] font-bold tracking-tight text-[var(--foreground)]">Jump back in</h3>
             <span className="text-[10px] font-bold text-[var(--muted-foreground)] bg-[var(--muted)] px-2 py-0.5 rounded-md">{jumpBack.length} recent</span>
           </div>
           <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
@@ -281,9 +278,6 @@ export function ForYou() {
         return (
           <div key={it.key} className="mb-6">
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="h-7 w-7 rounded-lg grid place-items-center text-sm bg-[var(--muted)] border border-[var(--border)]" aria-hidden="true">
-                {it.kind === "country" ? flag(it.value) : "🎵"}
-              </div>
               <h3 className="text-[14px] font-bold tracking-tight text-[var(--foreground)] capitalize">{rowTitle(it)}</h3>
               {stations.length > 0 && (
                 <span className="text-[10px] font-bold text-[var(--muted-foreground)] bg-[var(--muted)] px-2 py-0.5 rounded-md">{stations.length} live</span>
