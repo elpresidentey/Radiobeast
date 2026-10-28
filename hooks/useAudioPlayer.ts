@@ -249,7 +249,10 @@ export function useAudioPlayer() {
       if (a.paused) a.play().catch((e) => {
         const msg = (e as Error)?.message || "";
         if (msg.includes("AbortError") || msg.includes("interrupted")) return;
-        setError(msg || "Playback failed");
+        // Never surface raw browser engine text (e.g. "The element has no
+        // supported sources.") — always the friendly, actionable version.
+        setError("Stream unavailable — try another station");
+        setStreamFailed(true);
         setPlaying(false);
       });
     } else {

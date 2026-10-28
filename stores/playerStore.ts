@@ -118,19 +118,22 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   current: null,
   queue: [],
   isPlaying: false,
-  volume: typeof window !== "undefined" ? loadVol() : 0.8,
+  // Static defaults so SSR and the client's first render match (no hydration
+  // mismatch). Real values are loaded from localStorage right after mount —
+  // see the hydrate block at the bottom of this file.
+  volume: 0.8,
   isMuted: false,
-  favorites: typeof window !== "undefined" ? loadFavs() : [],
-  recent: typeof window !== "undefined" ? loadRecent() : [],
-  pinnedGenres: typeof window !== "undefined" ? loadPinned(PIN_GENRES_KEY) : [],
-  pinnedCountries: typeof window !== "undefined" ? loadPinned(PIN_COUNTRIES_KEY) : [],
-  pinnedLanguages: typeof window !== "undefined" ? loadPinned(PIN_LANGUAGES_KEY) : [],
-  dataSaver: typeof window !== "undefined" ? loadSaver() : false,
-  sleepTimer: typeof window !== "undefined" ? loadSleepTimer() : null,
+  favorites: [],
+  recent: [],
+  pinnedGenres: [],
+  pinnedCountries: [],
+  pinnedLanguages: [],
+  dataSaver: false,
+  sleepTimer: null,
   compactMode: false,
-  preferSelfHost: typeof window !== "undefined" ? loadPreferSelfHost() : false,
-  icecastFallback: typeof window !== "undefined" ? loadIcecastFallback() : false,
-  savedStations: typeof window !== "undefined" ? loadSaved() : [],
+  preferSelfHost: false,
+  icecastFallback: false,
+  savedStations: [],
   settingsOpen: false,
 
   play: (s) => {

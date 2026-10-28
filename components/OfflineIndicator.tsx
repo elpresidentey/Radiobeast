@@ -3,10 +3,14 @@ import { useEffect, useState } from "react";
 import { usePlayerStore } from "@/stores/playerStore";
 
 export function OfflineIndicator() {
-  const [online, setOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
+  // Server renders "online"; the real value is set on mount so SSR and
+  // first client render always match.
+  const [online, setOnline] = useState(true);
   const { current } = usePlayerStore();
 
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- one-time mount sync: online state lives outside React */
+    setOnline(navigator.onLine);
     const onOnline = () => setOnline(true);
     const onOffline = () => setOnline(false);
     window.addEventListener("online", onOnline);
