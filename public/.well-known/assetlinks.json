@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.radiobeast.twa",
+    "sha256_cert_fingerprints": [
+      "4C:1C:3C:F3:C2:D6:C6:25:FA:39:23:FA:3F:3B:0C:89:3E:58:ED:B5:13:5A:1C:23:0C:42:38:D1:E9:D4:01:AC"
+    ]
+  }
+}]

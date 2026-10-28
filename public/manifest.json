@@ -3,6 +3,7 @@
   "short_name": "Radiobeast",
   "description": "Listen to 45,000+ live radio stations from every country. Free, no sign-up.",
   "start_url": "/",
+  "id": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "browser"],
