@@ -57,7 +57,21 @@ const jobs = [
   ["launch-icon-monochrome-512.png", monoSvg],
 ];
 
+// Web/PWA + Apple + favicon icons get the same red design so the site,
+// installed PWA and Play listing all share one identity.
+const webSizes = [
+  ["icon-512x512.png", 512],
+  ["icon-192x192.png", 192],
+  ["apple-touch-icon.png", 180],
+  ["icon-48x48.png", 48],
+  ["icon-32x32.png", 32],
+];
+
 for (const [name, svg] of jobs) {
   await sharp(Buffer.from(svg)).png().toFile(OUT + name);
+  console.log("wrote", name);
+}
+for (const [name, size] of webSizes) {
+  await sharp(Buffer.from(jobs[0][1])).resize(size, size).png().toFile(OUT + name);
   console.log("wrote", name);
 }

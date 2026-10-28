@@ -1,8 +1,8 @@
 /* Radiobeast Service Worker — offline shell + API cache + offline fallback — v4 */
-const CACHE_NAME = "radiobeast-v4";
-const STATIC_CACHE = "radiobeast-static-v4";
-const API_CACHE = "radiobeast-api-v4";
-const OFFLINE_CACHE = "radiobeast-offline-v4";
+const CACHE_NAME = "radiobeast-v5";
+const STATIC_CACHE = "radiobeast-static-v5";
+const API_CACHE = "radiobeast-api-v5";
+const OFFLINE_CACHE = "radiobeast-offline-v5";
 
 const APP_SHELL = [
   "/",
