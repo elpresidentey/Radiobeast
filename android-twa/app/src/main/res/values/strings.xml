@@ -16,6 +16,12 @@
 -->
 <resources>
   
+    <string-array name="additional_trusted_origins">
+    
+      <item>https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app</item>
+    
+    </string-array>
+  
 
   <!--
     The "fullscreen" and "fullscreen-sticky" TWA manifest values correspond to "immersive" and "sticky-immersive"
@@ -50,9 +56,17 @@
         \"relation\": [\"delegate_permission/common.handle_all_urls\"],
         \"target\": {
             \"namespace\": \"web\",
-            \"site\": \"https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app\"
+            \"site\": \"https://radiobeast.vercel.app\"
         }
     }]
+    
+      ,[{
+          \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+          \"target\": {
+              \"namespace\": \"web\",
+              \"site\": \"https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app\"
+          }
+      }]        
     
   </string>  
 </resources>

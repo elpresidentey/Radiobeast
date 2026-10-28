@@ -22,7 +22,7 @@
     "alias": "radiobeast"
   },
   "appVersionName": "1.0.0",
-  "appVersionCode": 3,
+  "appVersionCode": 5,
   "shortcuts": [
     {
       "name": "Trending stations",
@@ -58,7 +58,9 @@
   "minSdkVersion": 24,
   "orientation": "any",
   "fingerprints": [],
-  "additionalTrustedOrigins": ["https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app"],
+  "additionalTrustedOrigins": [
+    "radiobeast-git-main-ekenes-projects-c0862f30.vercel.app"
+  ],
   "retainedBundles": [],
   "displayOverride": [
     "window-controls-overlay",

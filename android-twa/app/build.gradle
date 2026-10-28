@@ -22,7 +22,7 @@ plugins {
 
 def twaManifest = [
     applicationId: 'app.radiobeast.twa',
-    hostName: 'radiobeast-git-main-ekenes-projects-c0862f30.vercel.app', // The domain being opened in the TWA.
+    hostName: 'radiobeast.vercel.app', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'Radiobeast', // The application name.
     launcherName: 'Radiobeast', // The name shown on the Android Launcher.
@@ -39,7 +39,7 @@ def twaManifest = [
     // - short_name: Shorter string used if |name| is too long.
     // - url: Absolute path of the URL to launch the app with (e.g '/create').
     // - icon: Name of the resource in the drawable folder to use as an icon.
-    shortcuts: [[name:'Trending stations', short_name:'Trending', url:'https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/?tab=trending', icon:'shortcut_0'],[name:'Search', short_name:'Search', url:'https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/?focus=search', icon:'shortcut_1']],
+    shortcuts: [[name:'Trending stations', short_name:'Trending', url:'https://radiobeast.vercel.app/?tab=trending', icon:'shortcut_0'],[name:'Search', short_name:'Search', url:'https://radiobeast.vercel.app/?focus=search', icon:'shortcut_1']],
     // The duration of fade out animation in milliseconds to be played when removing splash screen.
     splashScreenFadeOutDuration: 300,
     generatorApp: 'bubblewrap-cli', // Application that generated the Android Project
@@ -57,7 +57,7 @@ android {
         applicationId "app.radiobeast.twa"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode 3
+        versionCode 5
         versionName "1.0.0"
 
         // The name for the application
@@ -76,12 +76,12 @@ android {
             // The URL the Web Manifest for the Progressive Web App that the TWA points to. This
             // is used by Chrome OS and Meta Quest to open the Web version of the PWA instead of
             // the TWA, as it will probably give a better user experience for non-mobile devices.
-            resValue "string", "webManifestUrl", 'https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/manifest.json'
+            resValue "string", "webManifestUrl", 'https://radiobeast.vercel.app/manifest.json'
         
 
         
             // This is used by Meta Quest.
-            resValue "string", "fullScopeUrl", 'https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/'
+            resValue "string", "fullScopeUrl", 'https://radiobeast.vercel.app/'
         
 
         
