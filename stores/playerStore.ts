@@ -20,6 +20,7 @@ type PlayerState = {
   preferSelfHost: boolean;
   icecastFallback: boolean;
   savedStations: SavedStationMeta[];
+  settingsOpen: boolean; // shared UI state — header + mobile nav both open it
   // actions
   play: (s: Station) => void;
   toggle: () => void;
@@ -45,6 +46,7 @@ type PlayerState = {
   removeSavedStation: (uuid: string) => Promise<void>;
   clearSavedStations: () => Promise<void>;
   refreshSavedStations: () => void;
+  setSettingsOpen: (v: boolean) => void;
 };
 
 const FAV_KEY = "radiobeast:favs";
@@ -129,6 +131,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   preferSelfHost: typeof window !== "undefined" ? loadPreferSelfHost() : false,
   icecastFallback: typeof window !== "undefined" ? loadIcecastFallback() : false,
   savedStations: typeof window !== "undefined" ? loadSaved() : [],
+  settingsOpen: false,
 
   play: (s) => {
     const { recent } = get();
@@ -235,6 +238,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     cleanExpired();
     set({ savedStations: loadSaved() });
   },
+  setSettingsOpen: (v) => set({ settingsOpen: v }),
 }));
 
 // hydrate on client

@@ -6,6 +6,8 @@ import { StationCard } from "@/components/StationCard";
 import { CuratedGroups } from "@/components/CuratedGroups";
 import { PopularGenres } from "@/components/PopularGenres";
 import { ForYou } from "@/components/ForYou";
+import { BottomNav } from "@/components/BottomNav";
+import { Settings } from "@/components/Settings";
 import {
   Station, Country, Tag, Language,
   getCountries, getTags, getLanguages, getTopStations, getTopVoted,
@@ -81,7 +83,7 @@ export default function Home() {
   const offsetRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const { play, favorites, recent, setQueue, dataSaver, preferSelfHost, icecastFallback, clearFavorites, clearRecent } = usePlayerStore();
+  const { play, favorites, recent, setQueue, dataSaver, preferSelfHost, icecastFallback, clearFavorites, clearRecent, settingsOpen, setSettingsOpen } = usePlayerStore();
   const limit = dataSaver ? 18 : 24;
 
   // meta lookups
@@ -286,6 +288,13 @@ export default function Home() {
     });
   }, []);
 
+  const selectNavTab = useCallback((next: Tab) => {
+    setTab(next);
+    requestAnimationFrame(() => {
+      document.getElementById("browse")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
   const tabs: [Tab, string][] = [
     ["trending", "Trending"],
     ["top", "Top Voted"],
@@ -367,7 +376,7 @@ export default function Home() {
 
       {/* controls */}
       <div id="browse" className="mx-auto w-full max-w-6xl px-4 sm:px-6 mt-6 scroll-mt-[120px] sm:scroll-mt-24">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+        <div className="hidden md:flex items-center gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
           <div className="flex items-center rounded-2xl bg-[var(--muted)]/70 border border-[var(--border)] p-1 gap-1 shrink-0" role="tablist" aria-label="Station lists">
             {tabs.map(([k, label]) => (
               <button
@@ -540,6 +549,9 @@ export default function Home() {
           </>
         )}
       </main>
+
+      <BottomNav tab={tab} onSelect={selectNavTab} />
+      <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <footer className="border-t border-[var(--border)] mt-10 pb-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--muted-foreground)]">

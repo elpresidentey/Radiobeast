@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useTheme } from "@/components/ThemeProvider";
-import { Settings } from "@/components/Settings";
 
 function LogoMark() {
   return (
@@ -24,10 +23,9 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
   const inputRef = useRef<HTMLInputElement>(null);
   const mobileRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { current, isPlaying, dataSaver } = usePlayerStore();
+  const { current, isPlaying, dataSaver, setSettingsOpen } = usePlayerStore();
   const { theme, toggle } = useTheme();
   const [canInstall, setCanInstall] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- sync external prop into debounced local field
   useEffect(() => setLocal(searchValue), [searchValue]);
@@ -194,7 +192,6 @@ export function Header({ onSearch, searchValue }: { onSearch: (v: string) => voi
           {searchField(true)}
         </div>
       </div>
-      <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </header>
   );
 }

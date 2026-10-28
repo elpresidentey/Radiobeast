@@ -73,7 +73,7 @@ export function GlobalPlayer() {
 
   if (!current) {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-50 liquid-strong safe-bottom">
+      <div className="hidden md:block fixed inset-x-0 bottom-0 z-50 liquid-strong">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-center gap-2 text-[13px] text-[var(--muted-foreground)] text-center">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--border-hover)] animate-pulse hidden sm:inline" />
           <span className="truncate">Pick a station — 45,000+ live worldwide</span>
@@ -90,7 +90,7 @@ export function GlobalPlayer() {
   const queueIdx = queue.findIndex((s) => s.stationuuid === current.stationuuid);
 
   return (
-    <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed inset-x-0 bottom-0 z-50 liquid-strong safe-bottom shadow-[0_-12px_40px_-16px_rgba(0,0,0,0.5)]">
+    <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed inset-x-0 above-bottom-nav z-50 liquid-strong shadow-[0_-12px_40px_-16px_rgba(0,0,0,0.5)]">
       {error && (
         <div className="flex items-center justify-between gap-2 bg-red-500/10 border-b border-red-500/20 px-4 py-2 text-sm text-red-400" role="alert">
           <span className="truncate text-xs sm:text-sm">{error}</span>

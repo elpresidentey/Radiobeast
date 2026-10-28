@@ -53,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <GlobalPlayer />
           <KeyboardShortcuts />
-          <div className="h-[92px] shrink-0" aria-hidden="true" />
+          <div className="bottom-nav-spacer shrink-0" aria-hidden="true" />
         </ThemeProvider>
       </body>
     </html>

@@ -29,6 +29,9 @@
   --radius-lg: 1.25rem;
   --radius-xl: 1.5rem;
 
+  /* fixed mobile chrome: 4rem bar + 1px top border */
+  --bottom-nav-h: 65px;
+
   /* elevation */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -238,6 +241,14 @@ header.liquid-strong { border-top: none; border-bottom: 1px solid var(--border);
 
 /* safe area */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* fixed chrome clears the mobile bottom nav */
+.above-bottom-nav { bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom)); }
+.bottom-nav-spacer { height: calc(92px + var(--bottom-nav-h) + env(safe-area-inset-bottom)); }
+@media (min-width: 768px) {
+  .above-bottom-nav { bottom: 0; }
+  .bottom-nav-spacer { height: 92px; }
+}
 
 /* range slider — refined */
 .range-slider {
