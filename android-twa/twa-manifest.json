@@ -13,8 +13,9 @@
   "backgroundColor": "#08080A",
   "enableNotifications": false,
   "startUrl": "/",
-  "iconUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/icon-512x512.png",
-  "maskableIconUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/icon-512x512.png",
+  "iconUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/launch-icon-512.png",
+  "maskableIconUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/launch-icon-maskable-512.png",
+  "monochromeIconUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/launch-icon-monochrome-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./keystore/radiobeast-release.keystore",
