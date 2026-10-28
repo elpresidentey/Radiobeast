@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { StationCard } from "@/components/StationCard";
@@ -563,7 +564,9 @@ export default function Home() {
             <span className="text-[var(--border-hover)]">·</span>
             <span>Worldwide stations · Free · No sign-up</span>
           </div>
-          <span className="flex gap-3 items-center text-[11px] tracking-wide">
+          <span className="flex gap-3 items-center text-[11px] tracking-wide flex-wrap justify-center">
+            <Link href="/privacy" className="hover:text-[var(--foreground)] transition-colors">Privacy</Link>
+            <a href="https://github.com/elpresidentey/Radiobeast" target="_blank" rel="noreferrer" className="hover:text-[var(--foreground)] transition-colors">GitHub ↗</a>
             <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">Space</kbd> play
             <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">←→</kbd> skip
             <kbd className="rounded-md border border-[var(--border)] bg-[var(--muted)] px-1.5 py-0.5 font-mono text-[10px]">?</kbd> help
