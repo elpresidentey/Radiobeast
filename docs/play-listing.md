@@ -44,6 +44,7 @@ Contains in-app purchases: No
 
 ## Notes
 - Package name: app.radiobeast.twa
-- Website field: the production URL (recommend replacing the long
-  radiobeast-git-main-…vercel.app with a cleaner domain before submission)
-- Privacy policy URL: <production url>/privacy (deployed with commit 3ea3947+)
+- Website field: https://radiobeast.vercel.app (clean domain, baked into the
+  TWA build as of the domain-swap commit; the long git-main Vercel URL is a
+  trusted secondary origin)
+- Privacy policy URL: https://radiobeast.vercel.app/privacy
