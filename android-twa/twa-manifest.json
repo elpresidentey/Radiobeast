@@ -4,13 +4,13 @@
   "name": "Radiobeast",
   "launcherName": "Radiobeast",
   "display": "standalone",
-  "themeColor": "#ff3b30",
-  "themeColorDark": "#ff3b30",
-  "navigationColor": "#ff3b30",
-  "navigationColorDark": "#ff3b30",
-  "navigationDividerColor": "#ff3b30",
-  "navigationDividerColorDark": "#ff3b30",
-  "backgroundColor": "#08080a",
+  "themeColor": "#FF3B30",
+  "themeColorDark": "#08080A",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#08080A",
   "enableNotifications": false,
   "startUrl": "/",
   "iconUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/icon-512x512.png",
@@ -20,28 +20,49 @@
     "path": "./keystore/radiobeast-release.keystore",
     "alias": "radiobeast"
   },
-  "appVersionCode": 1,
   "appVersionName": "1.0.0",
+  "appVersionCode": 2,
   "shortcuts": [
     {
       "name": "Trending stations",
-      "short_name": "Trending",
-      "url": "/?tab=trending",
-      "icons": [{ "src": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/icon-192x192.png", "sizes": "192x192" }]
+      "shortName": "Trending",
+      "url": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/?tab=trending",
+      "chosenIconUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/icon-192x192.png"
     },
     {
       "name": "Search",
-      "short_name": "Search",
-      "url": "/?focus=search",
-      "icons": [{ "src": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/icon-192x192.png", "sizes": "192x192" }]
+      "shortName": "Search",
+      "url": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/?focus=search",
+      "chosenIconUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/icons/icon-192x192.png"
     }
   ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/manifest.json",
   "fallbackType": "customtabs",
   "features": {
-    "locationDelegation": { "enabled": true },
-    "playBilling": { "enabled": false }
+    "locationDelegation": {
+      "enabled": true
+    },
+    "playBilling": {
+      "enabled": false
+    }
   },
-  "playEquivalent": false,
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://radiobeast-git-main-ekenes-projects-c0862f30.vercel.app/",
+  "minSdkVersion": 24,
   "orientation": "any",
-  "display": "standalone"
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": [
+    "window-controls-overlay",
+    "standalone",
+    "browser"
+  ],
+  "appVersion": "1.0.0"
 }

@@ -51,3 +51,9 @@ amp_*.js
 ampf_*.js
 /.openchamber/
 
+android-twa/app/build/
+android-twa/build/
+android-twa/.gradle/
+android-twa/*.aab
+android-twa/*.apk
+android-twa/*.idsig
