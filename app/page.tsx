@@ -319,7 +319,7 @@ export default function Home() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]"
           >
-            Radio.<br className="sm:hidden" /> Everywhere.
+            The whole world,<br className="sm:hidden" /> on one dial.
           </motion.h1>
 
           <motion.p
@@ -328,7 +328,7 @@ export default function Home() {
             transition={{ duration: 0.45, delay: 0.13, ease: [0.16, 1, 0.3, 1] }}
             className="mt-4 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]"
           >
-            Live stations worldwide — radio-browser + radio.garden combined. Just press play.
+            45,000+ live stations from every country on earth. Free, no account — just press play.
           </motion.p>
 
           <motion.div
