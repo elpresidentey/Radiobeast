@@ -319,16 +319,19 @@ export default function Home() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="text-[40px] sm:text-[60px] lg:text-[72px] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--foreground)]"
           >
-            The whole world,<br className="sm:hidden" /> on one dial.
+            The world is<br className="sm:hidden" />{" "}
+            <span className="bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] bg-clip-text text-transparent drop-shadow-[0_2px_16px_color-mix(in_srgb,var(--accent)_35%,transparent)]">
+              on air.
+            </span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.13, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-4 text-[15px] sm:text-[17px] leading-[1.65] text-[var(--muted-foreground)] max-w-[440px]"
+            className="mt-5 text-[17px] sm:text-[19px] leading-[1.6] font-medium text-[var(--muted-foreground)] max-w-[520px]"
           >
-            45,000+ live stations from every country on earth. Free, no account — just press play.
+            <span className="font-extrabold text-[var(--foreground)]">45,000+ live stations.</span> Every country on earth. Music, news, sport, and more — <span className="font-extrabold text-[var(--foreground)]">free, no account.</span> Just press play.
           </motion.p>
 
           <motion.div
